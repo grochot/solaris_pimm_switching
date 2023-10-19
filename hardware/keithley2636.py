@@ -82,9 +82,15 @@ class Channel:
 
     def ask(self, cmd):
         return float(self.instrument.ask(f'print(smu{self.channel}.{cmd})'))
+    
+    def askall(self, cmd):
+        return self.instrument.ask(f'print({cmd})')
 
     def write(self, cmd):
         self.instrument.write(f'smu{self.channel}.{cmd}')
+    
+    def writeall(self, cmd):
+        self.instrument.write(f'{cmd}')
 
     def values(self, cmd, **kwargs):
         """ Reads a set of values from the instrument through the adapter,
@@ -249,26 +255,75 @@ class Channel:
     
     def single_pulse_prepare(self, voltage, time, range):
         log.info("generate pulse")
-        self.write('trigger.source.listv({%f})' %voltage)
-        self.write('trigger.source.action = smua.ENABLE ')
-        self.write('trigger.measure.action = smua.DISABLE ')
+        self.write('trigger.source.listv({%f})' %voltage )
+        self.write('trigger.source.action = smub.ENABLE ')
+        self.write('trigger.measure.action = smub.DISABLE ')
         self.write('trigger.source.limiti = 0.1')
         self.write('source.rangev = %f' %range)
-        self.write('trigger.timer[1].delay = %f' %time)
-        self.write('trigger.timer[1].count = 1 ')
-        self.write('trigger.timer[1].passthrough = false ')
-        self.write('trigger.timer[1].stimulus = smua.trigger.ARMED_EVENT_ID ')
+        self.writeall('trigger.timer[1].delay = %f' %time)
+        self.writeall('trigger.timer[1].count = 1 ')
+        self.writeall('trigger.timer[1].passthrough = false ')
+        self.writeall('trigger.timer[1].stimulus = smub.trigger.ARMED_EVENT_ID ')
         self.write('trigger.source.stimulus = 0')
-        self.write('trigger.endpulse.action = smua.SOURCE_IDLE ')
+        self.write('trigger.endpulse.action = smub.SOURCE_IDLE ')
         self.write('trigger.endpulse.stimulus = trigger.timer[1].EVENT_ID ')
         self.write('trigger.count = 1')
         self.write('trigger.arm.count = 1 ')
-        self.write('source.output = smua.OUTPUT_ON')
+        self.write('source.output = smub.OUTPUT_ON')
         
     def single_pulse_run(self):
         self.write('trigger.initiate()')
-        self.write('waitcomplete()')
+        self.writeall('waitcomplete()')
+        self.write('source.output = smub.OUTPUT_OFF')
+        print()
+
+    def pulse_script_v(self): 
+        self.write('reset()')
+        self.write('source.limiti = 10e-3')
+        self.writeall('PulseVMeasureI(smub, 1e-3, 1, 3, 1, 2)')
+        self.writeall('waitcomplete()') #PulseVMeasureI(smu, bias, level, ton, toff, points) 
+    
+    def pulse_script_i(self): 
+        self.write('reset()')
+        self.write('source.limitv = 1')
+        self.writeall('PulseIMeasureV(smub, 0, 10e-3, 20e-3, 50e-3, 10)') #PulseIMeasureV(smu, bias, level, ton, toff, points) 
+   
+    def pulse_script_read_i(self):
+        self.askall('printbuffer(1, 2, smub.nvbuffer1.readings)')
+    
+    def pulse_script_read_v(self):
+        self.askall('printbuffer(1, 2, smub.nvbuffer1.readings)')
+
+    def config_pulse_v(self):
+        self.writeall('smub.source.rangev = 5')
+        self.writeall('smub.source.levelv = 0')
+        self.writeall('smub.measure.rangev = 5')
+        self.writeall('smub.measure.rangei = 1')
+        self.writeall('smub.measure.nplc = 0.01')
+        self.writeall('smub.measure.autozero = smub.AUTOZERO_ONCE')
+        self.writeall('smub.source.output = smub.OUTPUT_ON')
+        self.askall('ConfigPulseVMeasureI(smub, 0.001, 0.5, 0.01, 0.5, 0.5, 3, smub.nvbuffer1, 1)') #ConfigPulseVMeasureI(smu, bias, level, limit, ton, toff, points, buffer,tag) 
+
+
+    def config_pulse_i(self):
+        self.writeall('rbi = smua.makebuffer(10)')
+        self.writeall('rbv = smua.makebuffer(10)')
+        self.writeall('rbi.appendmode = 1')
+        self.writeall('rbv.appendmode = 1')
+        self.writeall('rbs = { i = rbi, v = rbv }')
+        self.writeall('ConfigPulseIMeasureV(smua, 0, 5, 10, 0.001, 0.080, 1, smub.nvbuffer1, 1)' ) # f, msg = ConfigPulseIMeasureV(smu, bias, level, limit, ton, toff, points, buffer (if nil no measurements),ag) 
+
+
+    def start_pulse(self):
         
+        self.askall('InitiatePulseTest(1)')
+    
+    def reset_buffer(self):
+        self.writeall('smub.nvbuffer1.clear()')
+        self.writeall('smub.nvbuffer1.appendmode = 1')
+
+    def reset_smu(self):
+        self.writeall('smub.reset()')
 
     def auto_range_source(self):
         """ Configures the source to use an automatic range.

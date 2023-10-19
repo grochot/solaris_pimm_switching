@@ -26,7 +26,7 @@ import logging
 
 from pymeasure.instruments import Instrument
 
-from .buffer import KeithleyBuffer
+from buffer import KeithleyBuffer
 
 import numpy as np
 import time
@@ -123,6 +123,21 @@ class Keithley2700(KeithleyBuffer, Instrument):
         values=CLIST_VALUES,
         check_set_errors=True
     )
+
+    def set_voltage_measurement(self):
+        #self.write(":SYST:PRES")
+        self.ask("SENS:FUNC 'VOLT:AC'")
+    
+    def reset(self):
+        self.write('*RST')
+
+    def read(self):
+        self.write("READ?")
+
+
+    def initate_off(self):
+        self.write("INIT:CONT OFF")
+       
 
     def get_state_of_channels(self, channels):
         """ Get the open or closed state of the specified channels
