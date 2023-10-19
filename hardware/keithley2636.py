@@ -246,6 +246,29 @@ class Channel:
         else:
             self.current_range = current
         self.check_errors()
+    
+    def single_pulse_prepare(self, voltage, time, range):
+        log.info("generate pulse")
+        self.write('trigger.source.listv({%f})' %voltage)
+        self.write('trigger.source.action = smua.ENABLE ')
+        self.write('trigger.measure.action = smua.DISABLE ')
+        self.write('trigger.source.limiti = 0.1')
+        self.write('source.rangev = %f' %range)
+        self.write('trigger.timer[1].delay = %f' %time)
+        self.write('trigger.timer[1].count = 1 ')
+        self.write('trigger.timer[1].passthrough = false ')
+        self.write('trigger.timer[1].stimulus = smua.trigger.ARMED_EVENT_ID ')
+        self.write('trigger.source.stimulus = 0')
+        self.write('trigger.endpulse.action = smua.SOURCE_IDLE ')
+        self.write('trigger.endpulse.stimulus = trigger.timer[1].EVENT_ID ')
+        self.write('trigger.count = 1')
+        self.write('trigger.arm.count = 1 ')
+        self.write('source.output = smua.OUTPUT_ON')
+        
+    def single_pulse_run(self):
+        self.write('trigger.initiate()')
+        self.write('waitcomplete()')
+        
 
     def auto_range_source(self):
         """ Configures the source to use an automatic range.
