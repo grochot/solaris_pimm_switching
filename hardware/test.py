@@ -18,4 +18,3 @@ m = Keithley2700('GPIB0::18::INSTR')
 
 # k.ChB.config_pulse_v()
 
-#k.ChB.pulse_script_read_v()
