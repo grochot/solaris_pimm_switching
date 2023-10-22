@@ -132,7 +132,7 @@ class Keithley2700(KeithleyBuffer, Instrument):
         self.write('*RST')
 
     def read(self):
-        self.write("READ?")
+        self.ask("READ?")
 
 
     def get_state_of_channels(self, channels):

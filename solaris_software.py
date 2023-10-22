@@ -11,10 +11,12 @@ from pymeasure.display.windows.managed_dock_window import ManagedDockWindow
 from pymeasure.experiment import Procedure, Results
 from pymeasure.experiment import IntegerParameter, FloatParameter, Parameter, ListParameter, BooleanParameter, unique_filename
 from hardware.keithley2636 import Keithley2600
+from hardware.keithley2636_dummy import Keithley2600Dummy
 from hardware.keithley2700 import Keithley2700
+from hardware.keithley2700_dummy import Keithley2700Dummy
 from logic.vector import Vector
 
-class RandomProcedure(Procedure):
+class SolarisMesurement(Procedure):
     #addressess of the instruments
     keithley_address = Parameter("Keithley address", default="GPIB::26::INSTR") 
     multimeter_address = Parameter("Multimeter address", default="GPIB::18::INSTR")
@@ -32,7 +34,7 @@ class RandomProcedure(Procedure):
     compliance= FloatParameter("Compliance", default=0.1)
     nplc= FloatParameter("NPLC", default=0.1)
     range= FloatParameter("Range", default=0.1)
-    vector_param = Parameter("Vector")
+    vector_param = Parameter("Pulse amplitude vector [start, step, stop]")
 
 
     #switch parameters
@@ -56,15 +58,23 @@ class RandomProcedure(Procedure):
             #Prepare keithley 
             self.keithley = Keithley2600(self.keithley_address)
             self.keithley.ChA.single_pulse_prepare(self.pulse_voltage, self.pulse_time, self.pulse_range) 
-
-            #Prepare multimeter
-            self.multimeter = Keithley2700(self.multimeter_address)
-            log.info("Intruments connected")
+            log.info("Sourcemeter connected")
         except:
-            log.error("Could not connect to the instruments")
-        
+            self.keithley = Keithley2600Dummy()
+            log.error("Could not connect to the sourcemeter. Use dummy.")
+            
+        #Prepare multimeter
+        try:
+            self.multimeter = Keithley2700(self.multimeter_address)
+            log.info("Multimeter connected")
+            
+        except:
+            self.multimeter = Keithley2700Dummy()
+            log.error("Could not connect to the multimeter. Use dummy.")
+    
     
     def execute(self):
+        licznik = 0
         for i in self.vector:
             log.info("Close sourcemeter channel to probe")
             match self.mode_source:
@@ -130,24 +140,26 @@ class RandomProcedure(Procedure):
 
     
             data = {
-                'Pulse Voltage (V)': self.pulse_voltage,
-                'Current (A)': self.current_sense,
-                'Sense voltage (V)': self.voltage_sense,
-                'Resistance (Ohm)': self.voltage_sense/self.current_sense
+                'Pulse Voltage (V)': float(i),
+                'Current (A)': float(self.current_sense),
+                'Sense voltage (V)': float(self.voltage_sense),
+                'Resistance (ohm)': float(self.voltage_sense)/float(self.current_sense)
                 }
             self.emit('results', data)
-            log.debug("Emitting results: %s" % data)
-            self.emit('progress', 100 * i / self.iterations)
+            log.info("Step {} of {}".format(licznik, len(self.vector)))
+            self.emit('progress', 100 * licznik / len(self.vector))
             if self.step_by_step == True:
-                answer = input("Next step (y/n)?")
+                answer = input("[{}%] Next step (y/n)?".format(100 * licznik / len(self.vector)))
                 while answer != "y" and answer != "n":
-                    if answer == "n":
-                        log.info("Loop break")
-                        self.should_stop|()
-                    elif answer == "y":
-                        continue
-                    else:
-                        answer = input("Next step (y/n)?")
+                    answer = input("Next step (y/n)?")
+                if answer == "n":
+                    log.info("Loop break")
+                    self.should_stop()
+                    break
+                elif answer == "y":
+                    licznik = licznik + 1
+                    continue
+
             
             if self.should_stop():
                 log.warning("Caught the stop flag in the procedure")
@@ -162,7 +174,7 @@ class MainWindow(ManagedDockWindow):
 
     def __init__(self):
         super().__init__(
-            procedure_class=RandomProcedure,
+            procedure_class=SolarisMesurement,
             inputs=['sample', 'pulse_voltage', 'pulse_time', 'pulse_range', 'pulse_delay', 'number_of_pulses', 'bias_voltage', 'compliance', 'nplc', 'range', 'vector_param', 'probe_1', 'probe_2', 'probe_3', 'probe_4', 'switch_source_plus', 'switch_source_minus', 'mode_source', 'mode_multimeter', 'step_by_step'],
             displays=['sample'],
             x_axis=['Pulse Voltage (V)', 'Current (A)'],
