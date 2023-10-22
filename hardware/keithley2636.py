@@ -277,10 +277,10 @@ class Channel:
         self.write('source.output = smub.OUTPUT_OFF')
         print()
 
-    def pulse_script_v(self): 
+    def pulse_script_v(self, bias, level, ton, toff, points, limiti): 
         self.write('reset()')
-        self.write('source.limiti = 10e-3')
-        self.writeall('PulseVMeasureI(smub, 1e-3, 1, 3, 1, 2)')
+        self.write('source.limiti = %s' %limiti)
+        self.writeall('PulseVMeasureI(smub,{}, {}, {}, {}, {})'.format(bias, level, ton, toff, points)) #PulseVMeasureI(smu, bias, level, ton, toff, points)
         self.writeall('waitcomplete()') #PulseVMeasureI(smu, bias, level, ton, toff, points) 
     
     def pulse_script_i(self): 

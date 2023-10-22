@@ -26,7 +26,7 @@ import logging
 
 from pymeasure.instruments import Instrument
 
-from buffer import KeithleyBuffer
+from .buffer import KeithleyBuffer
 
 import numpy as np
 import time
@@ -124,9 +124,9 @@ class Keithley2700(KeithleyBuffer, Instrument):
         check_set_errors=True
     )
 
-    def set_voltage_measurement(self):
+    def set_voltage_measurement(self,channel):
         #self.write(":SYST:PRES")
-        self.ask("SENS:FUNC 'VOLT:AC'")
+        self.ask("SENS:FUNC 'VOLT', (@%s)"%channel)
     
     def reset(self):
         self.write('*RST')
@@ -134,10 +134,6 @@ class Keithley2700(KeithleyBuffer, Instrument):
     def read(self):
         self.write("READ?")
 
-
-    def initate_off(self):
-        self.write("INIT:CONT OFF")
-       
 
     def get_state_of_channels(self, channels):
         """ Get the open or closed state of the specified channels
@@ -153,6 +149,8 @@ class Keithley2700(KeithleyBuffer, Instrument):
         """ Open all channels of the Keithley 2700.
         """
         self.write(":ROUTe:OPEN:ALL")
+    
+   
 
     def __init__(self, adapter, name="Keithley 2700 MultiMeter/Switch System", **kwargs):
         super().__init__(
@@ -374,3 +372,4 @@ class Keithley2700(KeithleyBuffer, Instrument):
 
         # write the string to the display
         self.display_text = channel_string
+    
