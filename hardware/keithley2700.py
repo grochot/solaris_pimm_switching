@@ -35,9 +35,9 @@ class Keithley2700:
         opt = self.instrument.query("*OPT?")
         return opt
 
-    def pulse(self,time, channels):
+    def pulse(self,times, channels):
         self.instrument.write("ROUT:MULT:CLOS (@%s)"%channels)
-        time.sleep(time)
+        time.sleep(times)
         self.instrument.write("ROUT:MULT:OPEN (@%s)"%channels)
     def set_diode(self): 
         self.instrument.write("SENS:FUNC 'DIOD'")
@@ -60,3 +60,11 @@ class Keithley2700:
     def pulse_level(self, level):
         self.instrument.write("DIOD:BIAS:LEVel %s"%level)
         ##
+
+m = Keithley2700("GPIB0::18::INSTR")
+m.closed_channels("104")
+m.closed_channels("113")
+m.closed_channels("150")
+m.closed_channels("149")
+
+print(m.resistance())

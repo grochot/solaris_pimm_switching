@@ -49,6 +49,7 @@ class SolarisMesurement(Procedure):
         try:
             self.multimeter = Keithley2700(self.multimeter_address)
             self.multimeter.open_all_channels()
+            sleep(0.5)
             self.multimeter.closed_channels("149")
             self.multimeter.closed_channels("150")
             self.multimeter.pulse_level(self.pulse_current)
@@ -63,6 +64,7 @@ class SolarisMesurement(Procedure):
     def execute(self):
         
         log.info("Close sourcemeter channel to probe")
+        sleep(0.3)
         match self.mode_source:
             case "1->2":
                 self.multimeter.open_channels(self.multimeter.prepare_channels_source(self.probe_1))
@@ -92,7 +94,7 @@ class SolarisMesurement(Procedure):
                 self.multimeter.closed_channels(self.multimeter.prepare_channels_source(self.probe_4))
                 self.multimeter.open_channels(self.multimeter.prepare_channels_source(self.probe_2))
                 self.multimeter.closed_channels(self.multimeter.prepare_channels_source(self.probe_3))
-
+        sleep(0.5)
         log.info("Run voltage pulses")
         match self.mode_source:
             case "1->2":
@@ -115,11 +117,14 @@ class SolarisMesurement(Procedure):
                 self.multimeter.pulse(self.pulse_time, self.multimeter.prepare_channels_source(self.probe_2))
     
         log.info("End of pulses")
+        sleep(0.5)
         self.multimeter.open_all_channels()
-        self.resistance = self.multimeter.resistance()
+        sleep(0.5)
         self.multimeter.closed_channels("149")
         self.multimeter.closed_channels("150")
+        sleep(0.5)
         self.multimeter.set_resistance()
+        sleep(0.5)
         log.info("Close channels to measure")
         match self.mode_multimeter:
             case "1->3":
@@ -136,7 +141,8 @@ class SolarisMesurement(Procedure):
                 
 
         log.info("Measure resistance")
-        self.resistance = self.multimeter.resistance()
+        sleep(0.5)
+        self.resistance = float(self.multimeter.resistance())
         sleep(0.3)
         
         #close all probes to mass
@@ -185,7 +191,7 @@ class MainWindow(ManagedWindowBase):
                         )
         super().__init__(
             procedure_class=SolarisMesurement,
-            inputs=['sample', 'pulse_current', 'pulse_time',  'probe_1', 'probe_2', 'probe_3', 'probe_4', 'mode_source', 'mode_multimeter'],
+            inputs=['sample', 'pulse_current','multimeter_address', 'pulse_time',  'probe_1', 'probe_2', 'probe_3', 'probe_4', 'mode_source', 'mode_multimeter'],
             displays=['sample'],
             directory_input=True,
             inputs_in_scrollarea=True,

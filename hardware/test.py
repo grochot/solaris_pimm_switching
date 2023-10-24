@@ -6,6 +6,7 @@ rm = pyvisa.ResourceManager()
 print(rm.list_resources())
 
 m = Keithley2700('GPIB0::18::INSTR')
+m.resistance()
 
 # k = Keithley2600('GPIB0::26::INSTR')
 
