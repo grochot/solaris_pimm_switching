@@ -22,7 +22,7 @@ class SolarisMesurement(Procedure):
     #addressess of the instruments
     keithley_address = Parameter("Keithley address", default="GPIB::26::INSTR") 
     multimeter_address = Parameter("Multimeter address", default="GPIB::18::INSTR")
-    sourcemeter_device = ListParameter("Sourcemeter device", choices=["Keithley 2600", "Keithley 2400"])
+    sourcemeter_device = ListParameter("Sourcemeter device", default = "none", choices=["Keithley 2600", "Keithley 2400", "none"])
     sample = Parameter("Sample", default="Sample")
 
     #pulse parameters
