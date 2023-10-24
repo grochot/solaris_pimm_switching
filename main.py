@@ -42,7 +42,7 @@ class SolarisMesurement(Procedure):
 
     
 
-    DATA_COLUMNS = ['no', 'Pulse Current (V)', 'Resistance (ohm)']
+    DATA_COLUMNS = ['Pulse Current (V)', 'Resistance (ohm)']
 
     def startup(self):
         #Prepare multimeter
@@ -147,7 +147,6 @@ class SolarisMesurement(Procedure):
 
 
         data = {
-            'no': self.LICZNIK,
             'Pulse Current (V)': float(self.pulse_current),
             'Resistance (ohm)': self.resistance
             }
@@ -163,7 +162,7 @@ class SolarisMesurement(Procedure):
         #         self.should_stop()
         #         break
         #     elif answer == "y":
-        #         licznik = licznik + 1
+        #         licznik = licznik + 
         #         continue
 
         
