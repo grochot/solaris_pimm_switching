@@ -6,6 +6,8 @@ import sys
 import tempfile
 import random
 from time import sleep
+from pymeasure.display.windows import ManagedWindowBase
+from pymeasure.display.widgets import TableWidget, LogWidget
 from pymeasure.display.Qt import QtWidgets
 from pymeasure.display.windows.managed_dock_window import ManagedDockWindow
 from pymeasure.experiment import Procedure, Results
@@ -23,39 +25,34 @@ class SolarisMesurement(Procedure):
     sample = Parameter("Sample", default="Sample")
 
     #pulse parameters
-    pulse_voltage = FloatParameter("Pulse voltage", units="V", default=0.1)
+    pulse_current = ListParameter("Pulse current", choices=["1e-05", "0.0001", "0.001", "0.01"])
     pulse_time = FloatParameter("Pulse time", units="s", default=0.1)
-    pulse_delay = FloatParameter("Pulse delay", units="s", default=0.1)
-    pulse_range = IntegerParameter("Pulse range", default=1)
-    number_of_pulses = IntegerParameter("Number of pulses", default=1)
 
     #masurement parameters
-    bias_voltage = FloatParameter("Bias voltage", units="V", default=0.1)
-    compliance= FloatParameter("Compliance", default=0.1)
-    nplc= FloatParameter("NPLC", default=0.1)
-    range= FloatParameter("Range", default=0.1)
-    vector_param = Parameter("Pulse amplitude vector [start, step, stop]")
+
 
 
     #switch parameters
-    probe_1 = ListParameter("Probe 1", choices=["Col 1", "Col 2", "Col 3", "Col 4", "Col 5", "Col6", "Col 7", "Col 8"])
-    probe_2 = ListParameter("Probe 2", choices=["Col 1", "Col 2", "Col 3", "Col 4", "Col 5", "Col6", "Col 7", "Col 8"])
-    probe_3 = ListParameter("Probe 3", choices=["Col 1", "Col 2", "Col 3", "Col 4", "Col 5", "Col6", "Col 7", "Col 8"])
-    probe_4 = ListParameter("Probe 4", choices=["Col 1", "Col 2", "Col 3", "Col 4", "Col 5", "Col6", "Col 7", "Col 8"])
-    mode_source = ListParameter("Mode", choices=["1->2", "1->3", "1->4", "2->3", "2->4", "3->4", "1->2, 4->3", "1->4, 2->3"])
-    mode_multimeter = ListParameter("Mode", choices=[" 1->3", "2->4"])
-    step_by_step = BooleanParameter("Step by step", default=False)
+    probe_1 = ListParameter("Probe 1", choices=["Col 1", "Col 2", "Col 3", "Col 4"])
+    probe_2 = ListParameter("Probe 2", choices=["Col 1", "Col 2", "Col 3", "Col 4" ])
+    probe_3 = ListParameter("Probe 3", choices=["Col 5", "Col 6", "Col 7", "Col 8"])
+    probe_4 = ListParameter("Probe 4", choices=[ "Col 5", "Col 6", "Col 7", "Col 8"])
+    mode_source = ListParameter("Pulse mode", choices=["1->2", "1->3", "1->4", "2->3", "2->4", "3->4", "1->2, 4->3", "1->4, 2->3"])
+    mode_multimeter = ListParameter("Rxy mode", choices=[" 1->3", "2->4"])
+
     
 
-    DATA_COLUMNS = ['Pulse Voltage (V)', 'Current (A)', 'Sense voltage (V)', 'Resistance (ohm)']
+    DATA_COLUMNS = ['no', 'Pulse Current (V)', 'Resistance (ohm)']
 
     def startup(self):
-        self.vector_obj = Vector()
-        self.vector = self.vector_obj.generate_vector(self.vector_param)
         #Prepare multimeter
         try:
             self.multimeter = Keithley2700(self.multimeter_address)
             self.multimeter.open_all_channels()
+            self.multimeter.closed_channels("149")
+            self.multimeter.closed_channels("150")
+            self.multimeter.pulse_level(self.pulse_current)
+            self.multimeter.set_diode()
             log.info("Multimeter connected")
             
         except:
@@ -64,115 +61,140 @@ class SolarisMesurement(Procedure):
     
     
     def execute(self):
-        licznik = 0
-        for i in self.vector:
-            log.info("Close sourcemeter channel to probe")
-            match self.mode_source:
-                case "1->2":
-                    self.multimeter.closed_channels = self.probe_1[4:5]
-                    self.multimeter.closed_channels = self.probe_2[4:5]
-                case "1->3":
-                    self.multimeter.closed_channels = self.probe_1[4:5]
-                    self.multimeter.closed_channels = self.probe_3[4:5]
-                case "1->4":
-                    self.multimeter.closed_channels = self.probe_1[4:5]
-                    self.multimeter.closed_channels = self.probe_4[4:5]
-                case "2->3":
-                    self.multimeter.closed_channels = self.probe_2[4:5]
-                    self.multimeter.closed_channels = self.probe_3[4:5]
-                case "2->4":
-                    self.multimeter.closed_channels = self.probe_2[4:5]
-                    self.multimeter.closed_channels = self.probe_4[4:5]
-                case "3->4":
-                    self.multimeter.closed_channels = self.probe_3[4:5]
-                    self.multimeter.closed_channels = self.probe_4[4:5]
-                case "1->2, 4->3":
-                    self.multimeter.closed_channels = self.probe_1[4:5]
-                    self.multimeter.closed_channels = self.probe_2[4:5]
-                    self.multimeter.closed_channels = self.probe_4[4:5]
-                    self.multimeter.closed_channels = self.probe_3[4:5]
-                case "1->4, 2->3":
-                    self.multimeter.closed_channels = self.probe_1[4:5]
-                    self.multimeter.closed_channels = self.probe_4[4:5]
-                    self.multimeter.closed_channels = self.probe_2[4:5]
-                    self.multimeter.closed_channels = self.probe_3[4:5]
-
-            log.info("Run voltage pulses")
-            #Tutaj dać impulsy
-
-            log.info("End of pulses")
-            self.multimeter.open_all_channels()
-            log.info("Close channels to measure")
-            match self.mode_multimeter:
-                case "1->3":
-                    self.multimeter.closed_channels = self.probe_2[4:5]
-                    self.multimeter.closed_channels = self.probe_4[4:5]
-                    self.multimeter.closed_channels =  str(int(self.probe_1[4:5])+8)
-                    self.multimeter.closed_channels =  str(int(self.probe_3[4:5])+8)
-                   
-                case "2->4":
-                    self.multimeter.closed_channels = self.probe_1[4:5]
-                    self.multimeter.closed_channels = self.probe_3[4:5]
-                    self.multimeter.closed_channels =  str(int(self.probe_2[4:5])+8)
-                    self.multimeter.closed_channels =  str(int(self.probe_4[4:5])+8)
-                  
-
-            log.info("Measure resistance")
-            
-
-          
-            sleep(0.3)
-           
-            #close all probes to mass
-            self.multimeter.close_rows_to_columns(1, 'all', 1)
-            sleep(0.5)
-            self.multimeter.close_rows_to_columns(2, 'all', 1)
         
+        log.info("Close sourcemeter channel to probe")
+        match self.mode_source:
+            case "1->2":
+                self.multimeter.open_channels(self.multimeter.prepare_channels_source(self.probe_1))
+                self.multimeter.closed_channels(self.multimeter.prepare_channels_source(self.probe_2))
+            case "1->3":
+                self.multimeter.open_channels(self.multimeter.prepare_channels_source(self.probe_1))
+                self.multimeter.closed_channels(self.multimeter.prepare_channels_source(self.probe_3))
+            case "1->4":
+                self.multimeter.open_channels(self.multimeter.prepare_channels_source(self.probe_1))
+                self.multimeter.closed_channels(self.multimeter.prepare_channels_source(self.probe_4))
+            case "2->3":
+                self.multimeter.open_channels(self.multimeter.prepare_channels_source(self.probe_2))
+                self.multimeter.closed_channels(self.multimeter.prepare_channels_source(self.probe_3))
+            case "2->4":
+                self.multimeter.open_channels(self.multimeter.prepare_channels_source(self.probe_2))
+                self.multimeter.closed_channels(self.multimeter.prepare_channels_source(self.probe_4))
+            case "3->4":
+                self.multimeter.open_channels(self.multimeter.prepare_channels_source(self.probe_3))
+                self.multimeter.closed_channels(self.multimeter.prepare_channels_source(self.probe_4))
+            case "1->2, 4->3":
+                self.multimeter.open_channels(self.multimeter.prepare_channels_source(self.probe_1))
+                self.multimeter.closed_channels(self.multimeter.prepare_channels_source(self.probe_2))
+                self.multimeter.open_channels(self.multimeter.prepare_channels_source(self.probe_4))
+                self.multimeter.closed_channels(self.multimeter.prepare_channels_source(self.probe_3))
+            case "1->4, 2->3":
+                self.multimeter.open_channels(self.multimeter.prepare_channels_source(self.probe_1))
+                self.multimeter.closed_channels(self.multimeter.prepare_channels_source(self.probe_4))
+                self.multimeter.open_channels(self.multimeter.prepare_channels_source(self.probe_2))
+                self.multimeter.closed_channels(self.multimeter.prepare_channels_source(self.probe_3))
 
+        log.info("Run voltage pulses")
+        match self.mode_source:
+            case "1->2":
+                self.multimeter.pulse(self.pulse_time, self.multimeter.prepare_channels_source(self.probe_1))
+            case "1->3":
+                self.multimeter.pulse(self.pulse_time, self.multimeter.prepare_channels_source(self.probe_1))
+            case "1->4":
+                self.multimeter.pulse(self.pulse_time, self.multimeter.prepare_channels_source(self.probe_1))
+            case "2->3":
+                self.multimeter.pulse(self.pulse_time, self.multimeter.prepare_channels_source(self.probe_2))
+            case "2->4":
+                self.multimeter.pulse(self.pulse_time, self.multimeter.prepare_channels_source(self.probe_2))
+            case "3->4":
+                self.multimeter.pulse(self.pulse_time, self.multimeter.prepare_channels_source(self.probe_3))
+            case "1->2, 4->3":
+                self.multimeter.pulse(self.pulse_time, self.multimeter.prepare_channels_source(self.probe_1))
+                self.multimeter.pulse(self.pulse_time, self.multimeter.prepare_channels_source(self.probe_4))
+            case "1->4, 2->3":
+                self.multimeter.pulse(self.pulse_time, self.multimeter.prepare_channels_source(self.probe_1))
+                self.multimeter.pulse(self.pulse_time, self.multimeter.prepare_channels_source(self.probe_2))
     
-            data = {
-                'Pulse Voltage (V)': float(i),
-                'Current (A)': float(self.current_sense),
-                'Sense voltage (V)': float(self.voltage_sense),
-                'Resistance (ohm)': float(self.voltage_sense)/float(self.current_sense)
-                }
-            self.emit('results', data)
-            log.info("Step {} of {}".format(licznik, len(self.vector)))
-            self.emit('progress', 100 * licznik / len(self.vector))
-            if self.step_by_step == True:
-                answer = input("[{}%] Next step (y/n)?".format(100 * licznik / len(self.vector)))
-                while answer != "y" and answer != "n":
-                    answer = input("Next step (y/n)?")
-                if answer == "n":
-                    log.info("Loop break")
-                    self.should_stop()
-                    break
-                elif answer == "y":
-                    licznik = licznik + 1
-                    continue
+        log.info("End of pulses")
+        self.multimeter.open_all_channels()
+        self.resistance = self.multimeter.resistance()
+        self.multimeter.closed_channels("149")
+        self.multimeter.closed_channels("150")
+        self.multimeter.set_resistance()
+        log.info("Close channels to measure")
+        match self.mode_multimeter:
+            case "1->3":
+                self.multimeter.closed_channels(self.multimeter.prepare_channels_sense(self.probe_1))
+                self.multimeter.closed_channels(self.multimeter.prepare_channels_sense(self.probe_3))
+                self.multimeter.closed_channels(self.multimeter.prepare_channels_source(self.probe_2))
+                self.multimeter.closed_channels(self.multimeter.prepare_channels_source(self.probe_4))
+                
+            case "2->4":
+                self.multimeter.closed_channels(self.multimeter.prepare_channels_sense(self.probe_2))
+                self.multimeter.closed_channels(self.multimeter.prepare_channels_sense(self.probe_4))
+                self.multimeter.closed_channels(self.multimeter.prepare_channels_source(self.probe_1))
+                self.multimeter.closed_channels(self.multimeter.prepare_channels_source(self.probe_3))
+                
 
-            
-            if self.should_stop():
-                log.warning("Caught the stop flag in the procedure")
-                break
+        log.info("Measure resistance")
+        self.resistance = self.multimeter.resistance()
+        sleep(0.3)
+        
+        #close all probes to mass
+        self.multimeter.close_to_mass()
+        sleep(0.5)
+        
     
+
+
+        data = {
+            'no': self.LICZNIK,
+            'Pulse Current (V)': float(self.pulse_current),
+            'Resistance (ohm)': self.resistance
+            }
+        self.emit('results', data)
+       
+        #self.emit('progress', 100 * licznik / len(self.vector))
+        # if self.step_by_step == True:
+        #     answer = input("[{}%] Next step (y/n)?".format(100 * licznik / len(self.vector)))
+        #     while answer != "y" and answer != "n":
+        #         answer = input("Next step (y/n)?")
+        #     if answer == "n":
+        #         log.info("Loop break")
+        #         self.should_stop()
+        #         break
+        #     elif answer == "y":
+        #         licznik = licznik + 1
+        #         continue
+
+        
+        if self.should_stop():
+            log.warning("Caught the stop flag in the procedure")
+           
+
     def shutdown(self):
-        log.info("Finished")
-        self.keithley.ChB.shutdown()       
+        log.info("Finished")     
             
 
-class MainWindow(ManagedDockWindow):
+class MainWindow(ManagedWindowBase):
 
     def __init__(self):
+        widget_list = (TableWidget("Experiment Table",
+                                    SolarisMesurement.DATA_COLUMNS,
+                                    by_column=True,
+                                    ),
+                        LogWidget("Experiment Log"),
+                        )
         super().__init__(
             procedure_class=SolarisMesurement,
-            inputs=['sample', 'pulse_voltage', 'pulse_time', 'pulse_range', 'pulse_delay', 'number_of_pulses', 'bias_voltage', 'compliance', 'nplc', 'range', 'vector_param', 'probe_1', 'probe_2', 'probe_3', 'probe_4', 'switch_source_plus', 'switch_source_minus', 'mode_source', 'mode_multimeter', 'step_by_step'],
+            inputs=['sample', 'pulse_current', 'pulse_time',  'probe_1', 'probe_2', 'probe_3', 'probe_4', 'mode_source', 'mode_multimeter'],
             displays=['sample'],
-            x_axis=['Pulse Voltage (V)', 'Current (A)'],
-            y_axis=['Pulse Voltage (V)', 'Resistance (ohm)'],
             directory_input=True,
             inputs_in_scrollarea=True,
+            widget_list=widget_list
         )
+        logging.getLogger().addHandler(widget_list[1].handler)
+        log.setLevel(self.log_level)
+        log.info("ManagedWindow connected to logging")
         self.setWindowTitle('Solaris Measurement')
         self.directory = r'C:/Path/'
 
