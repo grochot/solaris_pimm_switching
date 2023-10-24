@@ -59,3 +59,4 @@ class Keithley2700:
 
     def pulse_level(self, level):
         self.instrument.write("DIOD:BIAS:LEVel %s"%level)
+        ##
