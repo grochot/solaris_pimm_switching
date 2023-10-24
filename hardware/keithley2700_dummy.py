@@ -56,3 +56,5 @@ class Keithley2700Dummy:
 
     def pulse_level(self, level):
         pass
+
+    #
