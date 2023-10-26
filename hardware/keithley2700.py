@@ -43,9 +43,20 @@ class Keithley2700:
         self.instrument.write("SENS:FUNC 'DIOD'")
     def set_resistance(self): 
         self.instrument.write("SENS:FUNC 'FRES'")
+        time.sleep(0.5)
+        self.instrument.write("FRES:NPLC 1")
+
+    def set_averaging(self):
+        self.instrument.write("RES:AVER:COUNT 10")
+        time.sleep(0.3)
+        self.instrument.write("RES:AVER:TCON REP")
+        time.sleep(0.3)
+        self.instrument.write("RES:AVER ON")
+
     def resistance(self):
         res = self.instrument.query("MEAS:FRES?")
         return res
+
     def prepare_channels_source(self, channel):
         channel = channel[4:5]
         channel = str(100 + int(channel))
@@ -55,16 +66,10 @@ class Keithley2700:
         channel = str(108 + int(channel))
         return channel
     def close_to_mass(self):
-        self.instrument.write("ROUT:MULT:CLOS (@141,142,143,144,145,146,147,148,149,150)")
+        self.open_all_channels()
+        time.sleep(1)
+        self.instrument.write("ROUT:MULT:CLOS (@141,142,143,144,145,146,147,148)")
 
     def pulse_level(self, level):
         self.instrument.write("DIOD:BIAS:LEVel %s"%level)
         ##
-
-m = Keithley2700("GPIB0::18::INSTR")
-m.closed_channels("104")
-m.closed_channels("113")
-m.closed_channels("150")
-m.closed_channels("149")
-
-print(m.resistance())
