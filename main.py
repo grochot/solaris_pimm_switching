@@ -151,8 +151,8 @@ class SolarisMesurement(Procedure):
 
             log.info("Measure resistance")
             sleep(1)
-            self.resistence = float(self.multimeter.read())
-            #self.resistance = float(self.multimeter.resistance())
+            self.resistance = float(self.multimeter.read())                     #Jakby wyskakiwal błąd to zakomentować 
+            #self.resistance = float(self.multimeter.resistance())              #Odkomentować 
             
             sleep(1)
             
@@ -168,20 +168,6 @@ class SolarisMesurement(Procedure):
                 'Resistance (ohm)': self.resistance
                 }
             self.emit('results', data)
-        
-            #self.emit('progress', 100 * licznik / len(self.vector))
-            # if self.step_by_step == True:
-            #     answer = input("[{}%] Next step (y/n)?".format(100 * licznik / len(self.vector)))
-            #     while answer != "y" and answer != "n":
-            #         answer = input("Next step (y/n)?")
-            #     if answer == "n":
-            #         log.info("Loop break")
-            #         self.should_stop()
-            #         break
-            #     elif answer == "y":
-            #         licznik = licznik + 
-            #         continue
-
             
             if self.should_stop():
                 log.warning("Caught the stop flag in the procedure")
@@ -204,7 +190,7 @@ class MainWindow(ManagedWindowBase):
                         )
         super().__init__(
             procedure_class=SolarisMesurement,
-            inputs=['sample', 'pulse_current','multimeter_address', 'pulse_time',  'probe_1', 'probe_2', 'probe_3', 'probe_4', 'mode_source', 'mode_multimeter'],
+            inputs=['sample','mode', 'pulse_current','multimeter_address', 'pulse_time',  'probe_1', 'probe_2', 'probe_3', 'probe_4', 'mode_source', 'mode_multimeter'],
             displays=['sample'],
             directory_input=True,
             inputs_in_scrollarea=True,

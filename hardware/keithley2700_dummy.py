@@ -57,4 +57,6 @@ class Keithley2700Dummy:
     def pulse_level(self, level):
         pass
 
-    #
+
+    def set_averaging(self):
+        pass

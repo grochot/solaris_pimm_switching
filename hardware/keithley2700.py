@@ -41,17 +41,18 @@ class Keithley2700:
         self.instrument.write("ROUT:MULT:OPEN (@%s)"%channels)
     def set_diode(self): 
         self.instrument.write("SENS:FUNC 'DIOD'")
+    
     def set_resistance(self): 
         self.instrument.write("SENS:FUNC 'FRES'")
         time.sleep(0.5)
-        self.instrument.write("FRES:NPLC 1")
+        self.instrument.write("SENS:FRES:NPLC 1")
 
     def set_averaging(self):
-        self.instrument.write("RES:AVER:COUNT 10")
+        self.instrument.write("SENS:FRES:AVER:COUNT 10")
         time.sleep(0.3)
-        self.instrument.write("RES:AVER:TCON REP")
+        self.instrument.write("SENS:FRES:AVER:TCON REP")
         time.sleep(0.3)
-        self.instrument.write("RES:AVER ON")
+        self.instrument.write("SENS:FRES:AVER ON")
 
     def resistance(self):
         res = self.instrument.query("MEAS:FRES?")
