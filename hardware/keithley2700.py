@@ -44,8 +44,8 @@ class Keithley2700:
     
     def set_resistance(self): 
         self.instrument.write("SENS:FUNC 'FRES'")
-        time.sleep(0.5)
-        self.instrument.write("SENS:FRES:NPLC 1")
+        # time.sleep(0.5)
+        # self.instrument.write("SENS:FRES:NPLC 1")
 
     def set_averaging(self):
         self.instrument.write("SENS:FRES:AVER:COUNT 10")

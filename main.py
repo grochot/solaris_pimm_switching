@@ -132,7 +132,7 @@ class SolarisMesurement(Procedure):
             self.multimeter.closed_channels("150")
             sleep(1)
             self.multimeter.set_resistance()
-            self.multimeter.set_averaging()
+            #self.multimeter.set_averaging()
             sleep(1)
             log.info("Close channels to measure")
             match self.mode_multimeter:
@@ -151,8 +151,8 @@ class SolarisMesurement(Procedure):
 
             log.info("Measure resistance")
             sleep(1)
-            self.resistance = float(self.multimeter.read())                     #Jakby wyskakiwal błąd to zakomentować 
-            #self.resistance = float(self.multimeter.resistance())              #Odkomentować 
+                                #Jakby wyskakiwal błąd to zakomentować 
+            self.resistance = float(self.multimeter.resistance())              #Odkomentować 
             
             sleep(1)
             
