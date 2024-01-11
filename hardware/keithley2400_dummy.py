@@ -1,5 +1,5 @@
 import numpy as np
-class DummySourcemeter:
+class Keithley2400Dummy:
 
     def __init__(self, resource_name):
         pass

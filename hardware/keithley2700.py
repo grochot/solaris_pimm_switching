@@ -59,4 +59,31 @@ class Keithley2700:
 
     def pulse_level(self, level):
         self.instrument.write("DIOD:BIAS:LEVel %s"%level)
-        ##
+    
+    def set_resistance(self): 
+        self.instrument.write("SENS:FUNC 'FRES'")
+        # time.sleep(0.5)
+        # self.instrument.write("SENS:FRES:NPLC 1")
+    def set_voltage(self):
+        self.instrument.write("SENS:FUNC 'VOLT'")
+
+    def set_averaging(self, aver):
+        self.instrument.write("SENS:VOLT:AVER:COUNT {}".format(aver))
+        time.sleep(0.3)
+        self.instrument.write("SENS:VOLT:AVER:TCON REP")
+        time.sleep(0.3)
+        self.instrument.write("SENS:VOLT:AVER ON")
+
+    def resistance(self):
+        res = self.instrument.query("MEAS:FRES?")
+        return res
+
+
+
+k = Keithley2700("GPIB::18::INSTR")
+from time import sleep
+k.closed_channels("101")
+k.set_averaging(10)
+k.set_voltage()
+# sleep(2)
+print(k.read())

@@ -38,17 +38,18 @@ class SolarisMesurement(Procedure):
     nplc= FloatParameter("NPLC", default=0.1)
     range= FloatParameter("Range", default=0.1)
     vector_param = Parameter("Pulse amplitude vector [start, step, stop]")
+    average = IntegerParameter("Average", default=1)
 
 
     #switch parameters
-    probe_1 = ListParameter("Probe 1", choices=["Col 1", "Col 2", "Col 3", "Col 4", "Col 5", "Col6", "Col 7", "Col 8"])
-    probe_2 = ListParameter("Probe 2", choices=["Col 1", "Col 2", "Col 3", "Col 4", "Col 5", "Col6", "Col 7", "Col 8"])
-    probe_3 = ListParameter("Probe 3", choices=["Col 1", "Col 2", "Col 3", "Col 4", "Col 5", "Col6", "Col 7", "Col 8"])
-    probe_4 = ListParameter("Probe 4", choices=["Col 1", "Col 2", "Col 3", "Col 4", "Col 5", "Col6", "Col 7", "Col 8"])
+    probe_1 = ListParameter("Probe 1", choices=["Col 1", "Col 2", "Col 3", "Col 4"])
+    probe_2 = ListParameter("Probe 2", choices=["Col 1", "Col 2", "Col 3", "Col 4"])
+    probe_3 = ListParameter("Probe 3", choices=["Col 5", "Col6", "Col 7", "Col 8"])
+    probe_4 = ListParameter("Probe 4", choices=[ "Col 5", "Col6", "Col 7", "Col 8"])
     switch_source_plus= ListParameter("Switch source +", choices=["Row 1", "Row 2", "Row 3", "Row 4", "Row 5", "Row 6"])
     switch_source_minus= ListParameter("Switch source -", choices=["Row 1", "Row 2", "Row 3", "Row 4", "Row 5", "Row 6"])
-    mode_source = ListParameter("Mode", choices=["1->2", "1->3", "1->4", "2->3", "2->4", "3->4", "1->2, 4->3", "1->4, 2->3"])
-    mode_multimeter = ListParameter("Mode", choices=[" 1->3", "2->4"])
+    mode_source = ListParameter("Mode source", choices=["1->2", "1->3", "1->4", "2->3", "2->4", "3->4", "1->2, 4->3", "1->4, 2->3"])
+    mode_multimeter = ListParameter("Mode multimeter", choices=[" 1->3", "2->4"])
     step_by_step = BooleanParameter("Step by step", default=False)
     
 
@@ -61,7 +62,8 @@ class SolarisMesurement(Procedure):
             #Prepare keithley 
             if self.sourcemeter_device == "Keithley 2600":
                 self.keithley = Keithley2600(self.keithley_address)
-                self.keithley.ChA.single_pulse_prepare(self.pulse_voltage, self.pulse_time, self.pulse_range)
+                #self.keithley.ChA.single_pulse_prepare(self.pulse_voltage, self.pulse_time, self.pulse_range)
+                self.keithley.ChB.compliance_current(self.compliance)
             else: 
                 self.keithley = Keithley2400(self.keithley_address)
                 self.keithley.source_mode("Voltage")
@@ -79,6 +81,8 @@ class SolarisMesurement(Procedure):
         try:
             self.multimeter = Keithley2700(self.multimeter_address)
             self.multimeter.open_all_channels()
+            self.multimeter.set_voltage()
+            self.multimeter.set_averaging(self.average)
             log.info("Multimeter connected")
             
         except:
@@ -165,7 +169,7 @@ class SolarisMesurement(Procedure):
             else:
                 self.keithley.shutdown()
             
-            self.multimeter.close_rows_to_columns('all', 1, 1)
+            self.multimeter.open_all_channels()
         
 
     
@@ -205,7 +209,7 @@ class MainWindow(ManagedDockWindow):
     def __init__(self):
         super().__init__(
             procedure_class=SolarisMesurement,
-            inputs=['sample', 'pulse_voltage', 'pulse_time', 'pulse_range', 'pulse_delay', 'number_of_pulses', 'bias_voltage', 'compliance', 'nplc', 'range', 'vector_param', 'probe_1', 'probe_2', 'probe_3', 'probe_4', 'switch_source_plus', 'switch_source_minus', 'mode_source', 'mode_multimeter', 'step_by_step'],
+            inputs=['sample', 'pulse_voltage', 'pulse_time', 'pulse_range', 'pulse_delay', 'number_of_pulses', 'average', 'bias_voltage', 'compliance', 'nplc', 'range', 'vector_param', 'probe_1', 'probe_2', 'probe_3', 'probe_4', 'switch_source_plus', 'switch_source_minus', 'mode_source', 'mode_multimeter', 'step_by_step'],
             displays=['sample'],
             x_axis=['Pulse Voltage (V)', 'Current (A)'],
             y_axis=['Pulse Voltage (V)', 'Resistance (ohm)'],

@@ -399,3 +399,18 @@ class Channel:
         else:
             self.ramp_to_voltage(0.0)
         self.source_output = 'OFF'
+
+# from time import sleep
+# k = Keithley2600('GPIB::26::INSTR') 
+
+# #k.ChB.pulse_script_v(0, 2, 2,2, 2, 0.001)
+
+# k.ChB.measure_current(1, 3,1)
+# k.ChB.source_mode = "voltage"
+# k.ChB.compliance_current = 0.01
+# k.ChB.source_voltage = 0.1
+# k.ChB.source_output = 'ON'
+# sleep(0.4)
+# current_sense = k.ChB.current    
+# print(1/current_sense)
+# k.ChB.source_output = 'OFF'
