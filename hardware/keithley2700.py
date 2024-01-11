@@ -78,12 +78,21 @@ class Keithley2700:
         res = self.instrument.query("MEAS:FRES?")
         return res
 
+    def close_rows_to_columns(self,row, column):
+        self.number = str(100 + (row-1)*8 + column)
+        return self.number
 
+# k = Keithley2700("GPIB::18::INSTR")
+# from time import sleep
+# # k.closed_channels("101")
+# # k.set_averaging(10)
+# # k.set_voltage()
+# # # sleep(2)
+# # print(k.read())
+# print(k.close_rows_to_columns(5,6))
 
-k = Keithley2700("GPIB::18::INSTR")
-from time import sleep
-k.closed_channels("101")
-k.set_averaging(10)
-k.set_voltage()
-# sleep(2)
-print(k.read())
+# def close_rows_to_columns(row, column):
+#     number = str(100 + (row-1)*8 + column)
+#     return number
+
+# print(close_rows_to_columns(3,8))

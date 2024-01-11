@@ -56,5 +56,7 @@ class Keithley2700Dummy:
 
     def pulse_level(self, level):
         pass
-
+    def close_rows_to_columns(self,row, column):
+        self.number = str(100 + (row-1)*8 + column)
+        return self.number
     #

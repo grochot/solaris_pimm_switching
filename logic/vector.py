@@ -30,3 +30,5 @@ class Vector():
 		return numbers
 
 
+p = Vector()
+print(p.generate_vector("1,1,8"))

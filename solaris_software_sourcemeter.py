@@ -22,7 +22,7 @@ class SolarisMesurement(Procedure):
     #addressess of the instruments
     keithley_address = Parameter("Keithley address", default="GPIB::26::INSTR") 
     multimeter_address = Parameter("Multimeter address", default="GPIB::18::INSTR")
-    sourcemeter_device = ListParameter("Sourcemeter device", default = "none", choices=["Keithley 2600", "Keithley 2400", "none"])
+    sourcemeter_device = ListParameter("Sourcemeter device", default = "Keithley 2600", choices=["Keithley 2600", "Keithley 2400", "none"])
     sample = Parameter("Sample", default="Sample")
 
     #pulse parameters
@@ -42,15 +42,14 @@ class SolarisMesurement(Procedure):
 
 
     #switch parameters
-    probe_1 = ListParameter("Probe 1", choices=["Col 1", "Col 2", "Col 3", "Col 4"])
-    probe_2 = ListParameter("Probe 2", choices=["Col 1", "Col 2", "Col 3", "Col 4"])
-    probe_3 = ListParameter("Probe 3", choices=["Col 5", "Col6", "Col 7", "Col 8"])
-    probe_4 = ListParameter("Probe 4", choices=[ "Col 5", "Col6", "Col 7", "Col 8"])
+    probe_1 = ListParameter("A", choices=["Col 1", "Col 2", "Col 3", "Col 4"])
+    probe_2 = ListParameter("B", choices=["Col 1", "Col 2", "Col 3", "Col 4"])
+    probe_3 = ListParameter("C", choices=["Col 5", "Col6", "Col 7", "Col 8"])
+    probe_4 = ListParameter("D", choices=[ "Col 5", "Col6", "Col 7", "Col 8"])
     switch_source_plus= ListParameter("Switch source +", choices=["Row 1", "Row 2", "Row 3", "Row 4", "Row 5", "Row 6"])
     switch_source_minus= ListParameter("Switch source -", choices=["Row 1", "Row 2", "Row 3", "Row 4", "Row 5", "Row 6"])
-    mode_source = ListParameter("Mode source", choices=["1->2", "1->3", "1->4", "2->3", "2->4", "3->4", "1->2, 4->3", "1->4, 2->3"])
-    mode_multimeter = ListParameter("Mode multimeter", choices=[" 1->3", "2->4"])
-    step_by_step = BooleanParameter("Step by step", default=False)
+    mode_source = ListParameter("Mode source", choices=["A->B", "A->C", "A->D", "B->C", "B->D", "C->D", "A,B->C,D", "A,D,->B,C"])
+    mode_multimeter = ListParameter("Mode multimeter", choices=[" A->C", "B->D"])
     
 
     DATA_COLUMNS = ['Pulse Voltage (V)', 'Current (A)', 'Sense voltage (V)', 'Resistance (ohm)']
@@ -95,30 +94,30 @@ class SolarisMesurement(Procedure):
         for i in self.vector:
             log.info("Close sourcemeter channel to probe")
             match self.mode_source:
-                case "1->2":
+                case "A->B":
                     self.multimeter.close_rows_to_columns(int(self.switch_source_minus[4:5]), int(self.probe_1[4:5]))
                     self.multimeter.close_rows_to_columns(int(self.switch_source_plus[4:5]), int(self.probe_2[4:5]))
-                case "1->3":
+                case "A->C":
                     self.multimeter.close_rows_to_columns(int(self.switch_source_minus[4:5]), int(self.probe_1[4:5]))
                     self.multimeter.close_rows_to_columns(int(self.switch_source_plus[4:5]), int(self.probe_3[4:5]))
-                case "1->4":
+                case "A->D":
                     self.multimeter.close_rows_to_columns(int(self.switch_source_minus[4:5]), int(self.probe_1[4:5]))
                     self.multimeter.close_rows_to_columns(int(self.switch_source_plus[4:5]), int(self.probe_4[4:5]))
-                case "2->3":
+                case "B->C":
                     self.multimeter.close_rows_to_columns(int(self.switch_source_minus[4:5]), int(self.probe_2[4:5]))
                     self.multimeter.close_rows_to_columns(int(self.switch_source_plus[4:5]), int(self.probe_3[4:5]))
-                case "2->4":
+                case "B->D":
                     self.multimeter.close_rows_to_columns(int(self.switch_source_minus[4:5]), int(self.probe_2[4:5]))
                     self.multimeter.close_rows_to_columns(int(self.switch_source_plus[4:5]), int(self.probe_4[4:5]))
-                case "3->4":
+                case "C->D":
                     self.multimeter.close_rows_to_columns(int(self.switch_source_minus[4:5]), int(self.probe_3[4:5]))
                     self.multimeter.close_rows_to_columns(int(self.switch_source_plus[4:5]), int(self.probe_4[4:5]))
-                case "1->2, 4->3":
+                case "A,B->C,D":
                     self.multimeter.close_rows_to_columns(int(self.switch_source_minus[4:5]), int(self.probe_1[4:5]))
                     self.multimeter.close_rows_to_columns(int(self.switch_source_plus[4:5]), int(self.probe_2[4:5]))
                     self.multimeter.close_rows_to_columns(int(self.switch_source_minus[4:5]), int(self.probe_4[4:5]))
                     self.multimeter.close_rows_to_columns(int(self.switch_source_plus[4:5]), int(self.probe_3[4:5]))
-                case "1->4, 2->3":
+                case "A,D,->B,C":
                     self.multimeter.close_rows_to_columns(int(self.switch_source_minus[4:5]), int(self.probe_1[4:5]))
                     self.multimeter.close_rows_to_columns(int(self.switch_source_plus[4:5]), int(self.probe_4[4:5]))
                     self.multimeter.close_rows_to_columns(int(self.switch_source_minus[4:5]), int(self.probe_2[4:5]))
@@ -132,21 +131,21 @@ class SolarisMesurement(Procedure):
                 self.keithley.pulse(self.pulse_time, i)
             log.info("End of pulses")
             self.multimeter.open_all_channels()
+            self.multimeter.closed_channels("149")
+            self.multimeter.closed_channels("150")
             log.info("Close channels to measure")
             match self.mode_multimeter:
-                case "1->3":
-                    self.multimeter.close_rows_to_columns(int(1,int(self.probe_1[4:5])))
-                    self.multimeter.close_rows_to_columns(int(1,int(self.probe_3[4:5])))
+                case "A->C":
+                    self.multimeter.close_rows_to_columns(int(2),int(self.probe_1[4:5]))
+                    self.multimeter.close_rows_to_columns(int(2),int(self.probe_3[4:5]))
                     self.multimeter.close_rows_to_columns(int(self.switch_source_minus[4:5]), int(self.probe_2[4:5]))
                     self.multimeter.close_rows_to_columns(int(self.switch_source_plus[4:5]), int(self.probe_4[4:5]))
-                    self.multimeter.set_voltage_measurement([self.multimeter.channels_from_rows_columns(int(1,int(self.probe_1[4:5]))), self.multimeter.channels_from_rows_columns(int(1,int(self.probe_3[4:5])))])
-                case "2->4":
-                    self.multimeter.close_rows_to_columns(int(1,int(self.probe_2[4:5])))
-                    self.multimeter.close_rows_to_columns(int(1,int(self.probe_4[4:5])))
+                case "B->D":
+                    self.multimeter.close_rows_to_columns(int(2),int(self.probe_2[4:5]))
+                    self.multimeter.close_rows_to_columns(int(2),int(self.probe_4[4:5]))
                     self.multimeter.close_rows_to_columns(int(self.switch_source_minus[4:5]), int(self.probe_1[4:5]))
                     self.multimeter.close_rows_to_columns(int(self.switch_source_plus[4:5]), int(self.probe_3[4:5]))
-                    self.multimeter.set_voltage_measurement([self.multimeter.channels_from_rows_columns(int(1,int(self.probe_2[4:5]))), self.multimeter.channels_from_rows_columns(int(1,int(self.probe_4[4:5])))])
-
+                   
             log.info("Measure resistance")
             if self.sourcemeter_device == "Keithley 2600":
                 self.keithley.ChB.measure_current(self.nplc, self.range,1)
@@ -182,18 +181,9 @@ class SolarisMesurement(Procedure):
             self.emit('results', data)
             log.info("Step {} of {}".format(licznik, len(self.vector)))
             self.emit('progress', 100 * licznik / len(self.vector))
-            if self.step_by_step == True:
-                answer = input("[{}%] Next step (y/n)?".format(100 * licznik / len(self.vector)))
-                while answer != "y" and answer != "n":
-                    answer = input("Next step (y/n)?")
-                if answer == "n":
-                    log.info("Loop break")
-                    self.should_stop()
-                    break
-                elif answer == "y":
-                    licznik = licznik + 1
-                    continue
-
+            
+            licznik = licznik + 1
+                    
             
             if self.should_stop():
                 log.warning("Caught the stop flag in the procedure")
@@ -209,7 +199,7 @@ class MainWindow(ManagedDockWindow):
     def __init__(self):
         super().__init__(
             procedure_class=SolarisMesurement,
-            inputs=['sample', 'pulse_voltage', 'pulse_time', 'pulse_range', 'pulse_delay', 'number_of_pulses', 'average', 'bias_voltage', 'compliance', 'nplc', 'range', 'vector_param', 'probe_1', 'probe_2', 'probe_3', 'probe_4', 'switch_source_plus', 'switch_source_minus', 'mode_source', 'mode_multimeter', 'step_by_step'],
+            inputs=['sample', 'pulse_voltage', 'pulse_time', 'pulse_range', 'pulse_delay', 'number_of_pulses', 'average', 'bias_voltage', 'compliance', 'nplc', 'range', 'vector_param', 'probe_1', 'probe_2', 'probe_3', 'probe_4', 'switch_source_plus', 'switch_source_minus', 'mode_source', 'mode_multimeter'],
             displays=['sample'],
             x_axis=['Pulse Voltage (V)', 'Current (A)'],
             y_axis=['Pulse Voltage (V)', 'Resistance (ohm)'],
