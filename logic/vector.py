@@ -28,7 +28,3 @@ class Vector():
 					numbers= numbers + list(np.arange(start, stop+step, step))
 				w = w + 1
 		return numbers
-
-
-p = Vector()
-print(p.generate_vector("1,1,8"))
