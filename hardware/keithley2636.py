@@ -236,9 +236,9 @@ class Channel:
             self.write('measure.autorangev=1')
         else:
             self.voltage_range = voltage
-        self.check_errors()
+        
 
-    def measure_current(self, nplc=1, current=1.05e-4, auto_range=True):
+    def measure_current(self, nplc=1, current=1.5, auto_range=True):
         """ Configures the measurement of current.
         :param nplc: Number of power line cycles (NPLC) from 0.001 to 25
         :param current: Upper limit of current in Amps, from -1.5 A to 1.5 A
@@ -251,7 +251,7 @@ class Channel:
             self.write('measure.autorangei=1')
         else:
             self.current_range = current
-        self.check_errors()
+       
     
     def single_pulse_prepare(self, voltage, time, range):
         log.info("generate pulse")
@@ -394,10 +394,10 @@ class Channel:
         """ Ensures that the current or voltage is turned to zero
         and disables the output. """
         log.info("Shutting down channel %s." % self.channel)
-        if self.source_mode == 'current':
-            self.ramp_to_current(0.0)
-        else:
-            self.ramp_to_voltage(0.0)
+        # if self.source_mode == 'current':
+        #     self.ramp_to_current(0.0)
+        # else:
+        #     self.ramp_to_voltage(0.0)
         self.source_output = 'OFF'
 
 # from time import sleep
@@ -410,7 +410,7 @@ class Channel:
 # k.ChB.compliance_current = 0.01
 # k.ChB.source_voltage = 0.1
 # k.ChB.source_output = 'ON'
-# sleep(0.4)
+# # sleep(0.4)
 # current_sense = k.ChB.current    
 # print(1/current_sense)
-# k.ChB.source_output = 'OFF'
+# # k.ChB.source_output = 'OFF'

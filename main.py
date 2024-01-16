@@ -26,10 +26,8 @@ class SolarisMesurement(Procedure):
     sample = Parameter("Sample", default="Sample")
 
     #pulse parameters
-    pulse_voltage = FloatParameter("Pulse voltage", units="V", default=0.1)
     pulse_time = FloatParameter("Pulse time", units="s", default=0.1)
     pulse_delay = FloatParameter("Pulse delay", units="s", default=0.1)
-    pulse_range = IntegerParameter("Pulse range", default=1)
     number_of_pulses = IntegerParameter("Number of pulses", default=1)
 
     #masurement parameters
@@ -44,8 +42,8 @@ class SolarisMesurement(Procedure):
     #switch parameters
     probe_1 = ListParameter("A", choices=["Col 1", "Col 2", "Col 3", "Col 4"])
     probe_2 = ListParameter("B", choices=["Col 1", "Col 2", "Col 3", "Col 4"])
-    probe_3 = ListParameter("C", choices=["Col 5", "Col6", "Col 7", "Col 8"])
-    probe_4 = ListParameter("D", choices=[ "Col 5", "Col6", "Col 7", "Col 8"])
+    probe_3 = ListParameter("C", choices=["Col 5", "Col 6", "Col 7", "Col 8"])
+    probe_4 = ListParameter("D", choices=[ "Col 5", "Col 6", "Col 7", "Col 8"])
     switch_source_plus= ListParameter("Switch source +", choices=["Row 1", "Row 2", "Row 3", "Row 4", "Row 5", "Row 6"])
     switch_source_minus= ListParameter("Switch source -", choices=["Row 1", "Row 2", "Row 3", "Row 4", "Row 5", "Row 6"])
     mode_source = ListParameter("Mode source", choices=["A->B", "A->C", "A->D", "B->C", "B->D", "C->D", "A,B->C,D", "A,D,->B,C"])
@@ -62,7 +60,7 @@ class SolarisMesurement(Procedure):
             if self.sourcemeter_device == "Keithley 2600":
                 self.keithley = Keithley2600(self.keithley_address)
                 #self.keithley.ChA.single_pulse_prepare(self.pulse_voltage, self.pulse_time, self.pulse_range)
-                self.keithley.ChB.compliance_current(self.compliance)
+                self.keithley.ChB.compliance_current = self.compliance
             else: 
                 self.keithley = Keithley2400(self.keithley_address)
                 self.keithley.source_mode("Voltage")
@@ -72,7 +70,8 @@ class SolarisMesurement(Procedure):
                 self.keithley.measure_current()
                 
             log.info("Sourcemeter connected")
-        except:
+        except Exception as e:
+            print(e)
             self.keithley = Keithley2600Dummy()
             log.error("Could not connect to the sourcemeter. Use dummy.")
             
@@ -130,37 +129,41 @@ class SolarisMesurement(Procedure):
             else: 
                 self.keithley.pulse(self.pulse_time, i)
             log.info("End of pulses")
+            sleep(0.5)
             self.multimeter.open_all_channels()
             self.multimeter.closed_channels("149")
             self.multimeter.closed_channels("150")
             log.info("Close channels to measure")
+            sleep(0.5)
             match self.mode_multimeter:
                 case "A->C":
-                    self.multimeter.close_rows_to_columns(int(2),int(self.probe_1[4:5]))
-                    self.multimeter.close_rows_to_columns(int(2),int(self.probe_3[4:5]))
+                    self.multimeter.close_rows_to_columns(2,int(self.probe_1[4:5]))
+                    self.multimeter.close_rows_to_columns(2,int(self.probe_3[4:5]))
                     self.multimeter.close_rows_to_columns(int(self.switch_source_minus[4:5]), int(self.probe_2[4:5]))
                     self.multimeter.close_rows_to_columns(int(self.switch_source_plus[4:5]), int(self.probe_4[4:5]))
                 case "B->D":
-                    self.multimeter.close_rows_to_columns(int(2),int(self.probe_2[4:5]))
-                    self.multimeter.close_rows_to_columns(int(2),int(self.probe_4[4:5]))
+                    self.multimeter.close_rows_to_columns(2,int(self.probe_2[4:5]))
+                    self.multimeter.close_rows_to_columns(2,int(self.probe_4[4:5]))
                     self.multimeter.close_rows_to_columns(int(self.switch_source_minus[4:5]), int(self.probe_1[4:5]))
                     self.multimeter.close_rows_to_columns(int(self.switch_source_plus[4:5]), int(self.probe_3[4:5]))
-                   
+            sleep(0.5)
             log.info("Measure resistance")
             if self.sourcemeter_device == "Keithley 2600":
-                self.keithley.ChB.measure_current(self.nplc, self.range,1)
+                self.keithley.ChB.measure_current(self.nplc,3,1)
                 self.keithley.ChB.source_mode = "voltage"
                 self.keithley.ChB.source_voltage = self.bias_voltage
-                self.keithley.ChB.source_output = True
+                self.keithley.ChB.source_output = 'ON'
                 sleep(0.4)
-                self.current_sense = self.keithley.ChB.current    
+                self.current_sense = self.keithley.ChB.current   
+                print(self.current_sense) 
             else:  
                 self.keithley.source_voltage(self.bias_voltage)
                 sleep(0.3)
                 self.keithley.enable_source()
                 sleep(0.3)
                 self.current_sense = self.keithley.current()
-
+                
+            sleep(0.8)
             self.voltage_sense = self.multimeter.read()
             sleep(0.3)
             if self.sourcemeter_device == "Keithley 2600":
@@ -199,7 +202,7 @@ class MainWindow(ManagedDockWindow):
     def __init__(self):
         super().__init__(
             procedure_class=SolarisMesurement,
-            inputs=['sample', 'pulse_voltage', 'pulse_time', 'pulse_range', 'pulse_delay', 'number_of_pulses', 'average', 'bias_voltage', 'compliance', 'nplc', 'range', 'vector_param', 'probe_1', 'probe_2', 'probe_3', 'probe_4', 'switch_source_plus', 'switch_source_minus', 'mode_source', 'mode_multimeter'],
+            inputs=['sample','keithley_address', 'multimeter_address', 'sourcemeter_device' , 'pulse_time', 'pulse_delay', 'number_of_pulses', 'average', 'bias_voltage', 'compliance', 'nplc', 'vector_param', 'probe_1', 'probe_2', 'probe_3', 'probe_4', 'switch_source_plus', 'switch_source_minus', 'mode_source', 'mode_multimeter'],
             displays=['sample'],
             x_axis=['Pulse Voltage (V)', 'Current (A)'],
             y_axis=['Pulse Voltage (V)', 'Resistance (ohm)'],
