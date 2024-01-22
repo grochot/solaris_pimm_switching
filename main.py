@@ -20,8 +20,8 @@ from logic.vector import Vector
 
 class SolarisMesurement(Procedure):
     #addressess of the instruments
-    keithley_address = Parameter("Keithley address", default="GPIB::26::INSTR") 
-    multimeter_address = Parameter("Multimeter address", default="GPIB::18::INSTR")
+    keithley_address = Parameter("Keithley address", default="GPIB1::26::INSTR") 
+    multimeter_address = Parameter("Multimeter address", default="GPIB1::18::INSTR")
     sourcemeter_device = ListParameter("Sourcemeter device", default = "Keithley 2600", choices=["Keithley 2600", "Keithley 2400", "none"])
     sample = Parameter("Sample", default="Sample")
 
@@ -40,14 +40,14 @@ class SolarisMesurement(Procedure):
 
 
     #switch parameters
-    probe_1 = ListParameter("A", choices=["Col 1", "Col 2", "Col 3", "Col 4"])
-    probe_2 = ListParameter("B", choices=["Col 1", "Col 2", "Col 3", "Col 4"])
-    probe_3 = ListParameter("C", choices=["Col 5", "Col 6", "Col 7", "Col 8"])
-    probe_4 = ListParameter("D", choices=[ "Col 5", "Col 6", "Col 7", "Col 8"])
+    probe_1 = ListParameter("A", choices=["Col 1", "Col 2", "Col 3", "Col 4", "Col 5", "Col 6", "Col 7", "Col 8"])
+    probe_2 = ListParameter("B", choices=["Col 1", "Col 2", "Col 3", "Col 4", "Col 5", "Col 6", "Col 7", "Col 8"])
+    probe_3 = ListParameter("C", choices=["Col 1", "Col 2", "Col 3", "Col 4", "Col 5", "Col 6", "Col 7", "Col 8"])
+    probe_4 = ListParameter("D", choices=[ "Col 1", "Col 2", "Col 3", "Col 4", "Col 5", "Col 6", "Col 7", "Col 8"])
     switch_source_plus= ListParameter("Switch source +", choices=["Row 1", "Row 2", "Row 3", "Row 4", "Row 5", "Row 6"])
     switch_source_minus= ListParameter("Switch source -", choices=["Row 1", "Row 2", "Row 3", "Row 4", "Row 5", "Row 6"])
     mode_source = ListParameter("Mode source", choices=["A->B", "A->C", "A->D", "B->C", "B->D", "C->D", "A,B->C,D", "A,D,->B,C"])
-    mode_multimeter = ListParameter("Mode multimeter", choices=[" A->C", "B->D"])
+    mode_multimeter = ListParameter("Mode multimeter", choices=["A->C", "B->D", "A->B", "C->D"])
     
 
     DATA_COLUMNS = ['Pulse Voltage (V)', 'Current (A)', 'Sense voltage (V)', 'Resistance (ohm)']
@@ -131,21 +131,57 @@ class SolarisMesurement(Procedure):
             log.info("End of pulses")
             sleep(0.5)
             self.multimeter.open_all_channels()
-            self.multimeter.closed_channels("149")
             self.multimeter.closed_channels("150")
+            #self.multimeter.closed_channels("150")
             log.info("Close channels to measure")
             sleep(0.5)
-            match self.mode_multimeter:
+            match self.mode_source:
+                case "A->B":
+                    self.multimeter.close_rows_to_columns(int(self.switch_source_minus[4:5]), int(self.probe_1[4:5]))
+                    self.multimeter.close_rows_to_columns(int(self.switch_source_plus[4:5]), int(self.probe_2[4:5]))
                 case "A->C":
-                    self.multimeter.close_rows_to_columns(2,int(self.probe_1[4:5]))
-                    self.multimeter.close_rows_to_columns(2,int(self.probe_3[4:5]))
-                    self.multimeter.close_rows_to_columns(int(self.switch_source_minus[4:5]), int(self.probe_2[4:5]))
-                    self.multimeter.close_rows_to_columns(int(self.switch_source_plus[4:5]), int(self.probe_4[4:5]))
-                case "B->D":
-                    self.multimeter.close_rows_to_columns(2,int(self.probe_2[4:5]))
-                    self.multimeter.close_rows_to_columns(2,int(self.probe_4[4:5]))
                     self.multimeter.close_rows_to_columns(int(self.switch_source_minus[4:5]), int(self.probe_1[4:5]))
                     self.multimeter.close_rows_to_columns(int(self.switch_source_plus[4:5]), int(self.probe_3[4:5]))
+                case "A->D":
+                    self.multimeter.close_rows_to_columns(int(self.switch_source_minus[4:5]), int(self.probe_1[4:5]))
+                    self.multimeter.close_rows_to_columns(int(self.switch_source_plus[4:5]), int(self.probe_4[4:5]))
+                case "B->C":
+                    self.multimeter.close_rows_to_columns(int(self.switch_source_minus[4:5]), int(self.probe_2[4:5]))
+                    self.multimeter.close_rows_to_columns(int(self.switch_source_plus[4:5]), int(self.probe_3[4:5]))
+                case "B->D":
+                    self.multimeter.close_rows_to_columns(int(self.switch_source_minus[4:5]), int(self.probe_2[4:5]))
+                    self.multimeter.close_rows_to_columns(int(self.switch_source_plus[4:5]), int(self.probe_4[4:5]))
+                case "C->D":
+                    self.multimeter.close_rows_to_columns(int(self.switch_source_minus[4:5]), int(self.probe_3[4:5]))
+                    self.multimeter.close_rows_to_columns(int(self.switch_source_plus[4:5]), int(self.probe_4[4:5]))
+                case "A,B->C,D":
+                    self.multimeter.close_rows_to_columns(int(self.switch_source_minus[4:5]), int(self.probe_1[4:5]))
+                    self.multimeter.close_rows_to_columns(int(self.switch_source_plus[4:5]), int(self.probe_2[4:5]))
+                    self.multimeter.close_rows_to_columns(int(self.switch_source_minus[4:5]), int(self.probe_4[4:5]))
+                    self.multimeter.close_rows_to_columns(int(self.switch_source_plus[4:5]), int(self.probe_3[4:5]))
+                case "A,D,->B,C":
+                    self.multimeter.close_rows_to_columns(int(self.switch_source_minus[4:5]), int(self.probe_1[4:5]))
+                    self.multimeter.close_rows_to_columns(int(self.switch_source_plus[4:5]), int(self.probe_4[4:5]))
+                    self.multimeter.close_rows_to_columns(int(self.switch_source_minus[4:5]), int(self.probe_2[4:5]))
+                    self.multimeter.close_rows_to_columns(int(self.switch_source_plus[4:5]), int(self.probe_3[4:5]))
+            sleep(1)
+            match self.mode_multimeter:
+                case "A->C":
+                    self.multimeter.close_rows_to_columns(1,int(self.probe_1[4:5]))
+                    self.multimeter.close_rows_to_columns(1,int(self.probe_3[4:5]))
+                    
+                case "B->D":
+                    self.multimeter.close_rows_to_columns(1,int(self.probe_2[4:5]))
+                    self.multimeter.close_rows_to_columns(1,int(self.probe_4[4:5]))
+                  
+                case "A->B":
+                    self.multimeter.close_rows_to_columns(1,int(self.probe_1[4:5]))
+                    self.multimeter.close_rows_to_columns(1,int(self.probe_2[4:5]))
+                   
+                case "C->D":
+                    self.multimeter.close_rows_to_columns(1,int(self.probe_3[4:5]))
+                    self.multimeter.close_rows_to_columns(1,int(self.probe_4[4:5]))
+                   
             sleep(0.5)
             log.info("Measure resistance")
             if self.sourcemeter_device == "Keithley 2600":
