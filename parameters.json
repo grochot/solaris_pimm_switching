@@ -1,0 +1,22 @@
+{
+    "sample": "sample",
+    "keithley_address": "GPIB1::26::INSTR",
+    "multimeter_address": "GPIB1::18::INSTR",
+    "sourcemeter_device": "Keithley 2600",
+    "pulse_time": 0.1,
+    "pulse_delay": 0.2,
+    "number_of_pulses": 10,
+    "average": 10,
+    "bias_voltage": 0.1,
+    "compliance": 0.1,
+    "nplc": 1.0,
+    "vector_param": "1,10,1",
+    "probe_1": "Col 8",
+    "probe_2": "Col 2",
+    "probe_3": "Col 2",
+    "probe_4": "Col 2",
+    "switch_source_plus": "Row 1",
+    "switch_source_minus": "Row 2",
+    "mode_source": "A->B",
+    "mode_multimeter": "A->C"
+}

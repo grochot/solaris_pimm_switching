@@ -18,41 +18,52 @@ from hardware.keithley2400 import Keithley2400
 from hardware.keithley2400_dummy import Keithley2400Dummy   
 from logic.vector import Vector
 
+from logic.save_parameters import SaveParameters
+
 class SolarisMesurement(Procedure):
+    parameters = {}
+    save_parameter = SaveParameters()
+    parameters_from_file = save_parameter.ReadFile()
+    used_parameters_list=['sample','keithley_address', 'multimeter_address', 'sourcemeter_device' , 'pulse_time', 'pulse_delay', 'number_of_pulses', 'average', 'bias_voltage', 'compliance', 'nplc', 'vector_param', 'probe_1', 'probe_2', 'probe_3', 'probe_4', 'switch_source_plus', 'switch_source_minus', 'mode_source', 'mode_multimeter']
+    
     #addressess of the instruments
-    keithley_address = Parameter("Keithley address", default="GPIB1::26::INSTR") 
-    multimeter_address = Parameter("Multimeter address", default="GPIB1::18::INSTR")
-    sourcemeter_device = ListParameter("Sourcemeter device", default = "Keithley 2600", choices=["Keithley 2600", "Keithley 2400", "none"])
-    sample = Parameter("Sample", default="Sample")
+    keithley_address = Parameter("Keithley address", default = parameters_from_file["keithley_address"]) 
+    multimeter_address = Parameter("Multimeter address", default = parameters_from_file["multimeter_address"])
+    sourcemeter_device = ListParameter("Sourcemeter device", choices=["Keithley 2600", "Keithley 2400", "none"], default = parameters_from_file["sourcemeter_device"])
+    sample = Parameter("Sample", default = parameters_from_file["sample"])
 
     #pulse parameters
-    pulse_time = FloatParameter("Pulse time", units="s", default=0.1)
-    pulse_delay = FloatParameter("Pulse delay", units="s", default=0.1)
-    number_of_pulses = IntegerParameter("Number of pulses", default=1)
+    pulse_time = FloatParameter("Pulse time", units="s", default = parameters_from_file["pulse_time"])
+    pulse_delay = FloatParameter("Pulse delay", units="s", default = parameters_from_file["pulse_delay"])
+    number_of_pulses = IntegerParameter("Number of pulses",default = parameters_from_file["number_of_pulses"])
 
     #masurement parameters
-    bias_voltage = FloatParameter("Bias voltage", units="V", default=0.1)
-    compliance= FloatParameter("Compliance", default=0.1)
-    nplc= FloatParameter("NPLC", default=0.1)
-    range= FloatParameter("Range", default=0.1)
-    vector_param = Parameter("Pulse amplitude vector [start, step, stop]")
-    average = IntegerParameter("Average", default=1)
+    bias_voltage = FloatParameter("Bias voltage", units="V", default = parameters_from_file["bias_voltage"])
+    compliance= FloatParameter("Compliance", default = parameters_from_file["compliance"])
+    nplc= FloatParameter("NPLC", default = parameters_from_file["nplc"])
+    vector_param = Parameter("Pulse amplitude vector [start, step, stop]", default = parameters_from_file["vector_param"])
+    average = IntegerParameter("Average", default = parameters_from_file["average"])
 
 
     #switch parameters
-    probe_1 = ListParameter("A", choices=["Col 1", "Col 2", "Col 3", "Col 4", "Col 5", "Col 6", "Col 7", "Col 8"])
-    probe_2 = ListParameter("B", choices=["Col 1", "Col 2", "Col 3", "Col 4", "Col 5", "Col 6", "Col 7", "Col 8"])
-    probe_3 = ListParameter("C", choices=["Col 1", "Col 2", "Col 3", "Col 4", "Col 5", "Col 6", "Col 7", "Col 8"])
-    probe_4 = ListParameter("D", choices=[ "Col 1", "Col 2", "Col 3", "Col 4", "Col 5", "Col 6", "Col 7", "Col 8"])
-    switch_source_plus= ListParameter("Switch source +", choices=["Row 1", "Row 2", "Row 3", "Row 4", "Row 5", "Row 6"])
-    switch_source_minus= ListParameter("Switch source -", choices=["Row 1", "Row 2", "Row 3", "Row 4", "Row 5", "Row 6"])
-    mode_source = ListParameter("Mode source", choices=["A->B", "A->C", "A->D", "B->C", "B->D", "C->D", "A,B->C,D", "A,D,->B,C"])
-    mode_multimeter = ListParameter("Mode multimeter", choices=["A->C", "B->D", "A->B", "C->D"])
+    probe_1 = ListParameter("A", choices=["Col 1", "Col 2", "Col 3", "Col 4", "Col 5", "Col 6", "Col 7", "Col 8"], default = parameters_from_file["probe_1"])
+    probe_2 = ListParameter("B", choices=["Col 1", "Col 2", "Col 3", "Col 4", "Col 5", "Col 6", "Col 7", "Col 8"], default = parameters_from_file["probe_2"])
+    probe_3 = ListParameter("C", choices=["Col 1", "Col 2", "Col 3", "Col 4", "Col 5", "Col 6", "Col 7", "Col 8"], default = parameters_from_file["probe_2"])
+    probe_4 = ListParameter("D", choices=[ "Col 1", "Col 2", "Col 3", "Col 4", "Col 5", "Col 6", "Col 7", "Col 8"], default = parameters_from_file["probe_2"])
+    switch_source_plus= ListParameter("Switch source +", choices=["Row 1", "Row 2", "Row 3", "Row 4", "Row 5", "Row 6"], default = parameters_from_file["switch_source_plus"])
+    switch_source_minus= ListParameter("Switch source -", choices=["Row 1", "Row 2", "Row 3", "Row 4", "Row 5", "Row 6"], default = parameters_from_file["switch_source_minus"])
+    mode_source = ListParameter("Mode source", choices=["A->B", "A->C", "A->D", "B->C", "B->D", "C->D", "A,B->C,D", "A,D,->B,C"], default = parameters_from_file["mode_source"])
+    mode_multimeter = ListParameter("Mode multimeter", choices=["A->C", "B->D", "A->B", "C->D"], default = parameters_from_file["mode_multimeter"])
     
 
     DATA_COLUMNS = ['Pulse Voltage (V)', 'Current (A)', 'Sense voltage (V)', 'Resistance (ohm)']
 
     def startup(self):
+        for i in self.used_parameters_list:
+            self.param = eval("self."+i)
+            self.parameters[i] = self.param
+        
+        self.save_parameter.WriteFile(self.parameters)
         self.vector_obj = Vector()
         self.vector = self.vector_obj.generate_vector(self.vector_param)
         try:
@@ -73,7 +84,7 @@ class SolarisMesurement(Procedure):
         except Exception as e:
             print(e)
             self.keithley = Keithley2600Dummy()
-            log.error("Could not connect to the sourcemeter. Use dummy.")
+            log.warning("Could not connect to the sourcemeter. Use dummy.")
             
         #Prepare multimeter
         try:
@@ -85,7 +96,7 @@ class SolarisMesurement(Procedure):
             
         except:
             self.multimeter = Keithley2700Dummy()
-            log.error("Could not connect to the multimeter. Use dummy.")
+            log.warning("Could not connect to the multimeter. Use dummy.")
     
     
     def execute(self):
@@ -213,9 +224,9 @@ class SolarisMesurement(Procedure):
     
             data = {
                 'Pulse Voltage (V)': float(i),
-                'Current (A)': float(self.current_sense),
+                'Current (A)': float(self.current_sense[0]),
                 'Sense voltage (V)': float(self.voltage_sense),
-                'Resistance (ohm)': float(self.voltage_sense)/float(self.current_sense)
+                'Resistance (ohm)': float(self.voltage_sense)/float(self.current_sense[0])
                 }
             self.emit('results', data)
             log.info("Step {} of {}".format(licznik, len(self.vector)))
@@ -227,10 +238,14 @@ class SolarisMesurement(Procedure):
             if self.should_stop():
                 log.warning("Caught the stop flag in the procedure")
                 break
+
+        #shutdown instruments 
+        self.keithley.ChB.shutdown()   
+
     
     def shutdown(self):
         log.info("Finished")
-        self.keithley.ChB.shutdown()       
+        # self.keithley.ChB.shutdown()       
             
 
 class MainWindow(ManagedDockWindow):
