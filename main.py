@@ -48,8 +48,8 @@ class SolarisMesurement(Procedure):
     #switch parameters
     probe_1 = ListParameter("A", choices=["Col 1", "Col 2", "Col 3", "Col 4", "Col 5", "Col 6", "Col 7", "Col 8"], default = parameters_from_file["probe_1"])
     probe_2 = ListParameter("B", choices=["Col 1", "Col 2", "Col 3", "Col 4", "Col 5", "Col 6", "Col 7", "Col 8"], default = parameters_from_file["probe_2"])
-    probe_3 = ListParameter("C", choices=["Col 1", "Col 2", "Col 3", "Col 4", "Col 5", "Col 6", "Col 7", "Col 8"], default = parameters_from_file["probe_2"])
-    probe_4 = ListParameter("D", choices=[ "Col 1", "Col 2", "Col 3", "Col 4", "Col 5", "Col 6", "Col 7", "Col 8"], default = parameters_from_file["probe_2"])
+    probe_3 = ListParameter("C", choices=["Col 1", "Col 2", "Col 3", "Col 4", "Col 5", "Col 6", "Col 7", "Col 8"], default = parameters_from_file["probe_3"])
+    probe_4 = ListParameter("D", choices=[ "Col 1", "Col 2", "Col 3", "Col 4", "Col 5", "Col 6", "Col 7", "Col 8"], default = parameters_from_file["probe_4"])
     switch_source_plus= ListParameter("Switch source +", choices=["Row 1", "Row 2", "Row 3", "Row 4", "Row 5", "Row 6"], default = parameters_from_file["switch_source_plus"])
     switch_source_minus= ListParameter("Switch source -", choices=["Row 1", "Row 2", "Row 3", "Row 4", "Row 5", "Row 6"], default = parameters_from_file["switch_source_minus"])
     mode_source = ListParameter("Mode source", choices=["A->B", "A->C", "A->D", "B->C", "B->D", "C->D", "A,B->C,D", "A,D,->B,C"], default = parameters_from_file["mode_source"])
@@ -72,6 +72,7 @@ class SolarisMesurement(Procedure):
                 self.keithley = Keithley2600(self.keithley_address)
                 #self.keithley.ChA.single_pulse_prepare(self.pulse_voltage, self.pulse_time, self.pulse_range)
                 self.keithley.ChB.compliance_current = self.compliance
+                # self.keithley.ChB.measure_nplc = self.nplc
             else: 
                 self.keithley = Keithley2400(self.keithley_address)
                 self.keithley.source_mode("Voltage")
@@ -224,9 +225,9 @@ class SolarisMesurement(Procedure):
     
             data = {
                 'Pulse Voltage (V)': float(i),
-                'Current (A)': float(self.current_sense[0]),
+                'Current (A)': float(self.current_sense),
                 'Sense voltage (V)': float(self.voltage_sense),
-                'Resistance (ohm)': float(self.voltage_sense)/float(self.current_sense[0])
+                'Resistance (ohm)': float(self.voltage_sense)/float(self.current_sense)
                 }
             self.emit('results', data)
             log.info("Step {} of {}".format(licznik, len(self.vector)))
