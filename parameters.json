@@ -1,4 +1,5 @@
 {
+    "mode": "Sourcemeter pulse mode",
     "sample": "MgO001_Pt_NiO_30deg_sw01",
     "keithley_address": "GPIB0::26::INSTR",
     "multimeter_address": "GPIB0::18::INSTR",

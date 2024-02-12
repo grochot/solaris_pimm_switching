@@ -25,9 +25,10 @@ class SolarisMesurement(Procedure):
     parameters = {}
     save_parameter = SaveParameters()
     parameters_from_file = save_parameter.ReadFile()
-    used_parameters_list=['sample','keithley_address', 'multimeter_address', 'sourcemeter_device' , 'pulse_time', 'pulse_delay', 'number_of_pulses', 'average', 'bias_voltage', 'compliance', 'nplc', 'vector_param', 'probe_1', 'probe_2', 'probe_3', 'probe_4', 'switch_source_plus', 'switch_source_minus', 'mode_source', 'mode_multimeter']
+    used_parameters_list=['mode', 'sample','keithley_address', 'multimeter_address', 'sourcemeter_device' , 'pulse_time', 'pulse_delay', 'number_of_pulses', 'average', 'bias_voltage', 'compliance', 'nplc', 'vector_param', 'probe_1', 'probe_2', 'probe_3', 'probe_4', 'switch_source_plus', 'switch_source_minus', 'mode_source', 'mode_multimeter']
     
     #addressess of the instruments
+    mode = ListParameter("Experiment Mode", choices=["Sourcemeter pulse mode", "Multimeter Mode", "Switch pulse mode"], default = parameters_from_file["mode"])
     keithley_address = Parameter("Keithley address", default = parameters_from_file["keithley_address"]) 
     multimeter_address = Parameter("Multimeter address", default = parameters_from_file["multimeter_address"])
     sourcemeter_device = ListParameter("Sourcemeter device", choices=["Keithley 2600", "Keithley 2400", "none"], default = parameters_from_file["sourcemeter_device"])
@@ -67,201 +68,222 @@ class SolarisMesurement(Procedure):
         self.save_parameter.WriteFile(self.parameters)
         self.vector_obj = Vector()
         self.vector = self.vector_obj.generate_vector(self.vector_param)
-        try:
-            #Prepare keithley 
-            if self.sourcemeter_device == "Keithley 2600":
-                self.keithley = Keithley2600(self.keithley_address)
-                #self.keithley.ChA.single_pulse_prepare(self.pulse_voltage, self.pulse_time, self.pulse_range)
-                self.keithley.ChB.compliance_current = self.compliance
-                self.keithley.ChB.measure_nplc = self.nplc
-            else: 
-                self.keithley = Keithley2400(self.keithley_address)
-                self.keithley.source_mode("Voltage")
-                self.keithley.source_voltage_range(20)
-                self.keithley.compliance_current(self.compliance)
-                self.keithley.voltage_nplc(self.nplc)
-                self.keithley.measure_current()
-                
-            log.info("Sourcemeter connected")
-        except Exception as e:
-            print(e)
-            self.keithley = Keithley2600Dummy()
-            log.warning("Could not connect to the sourcemeter. Use dummy.")
-            
-        #Prepare multimeter
-        try:
-            self.multimeter = Keithley2700(self.multimeter_address)
-            self.multimeter.open_all_channels()
-            self.multimeter.set_voltage()
-            self.multimeter.set_averaging(self.average)
-            log.info("Multimeter connected")
-            
-        except:
-            self.multimeter = Keithley2700Dummy()
-            log.warning("Could not connect to the multimeter. Use dummy.")
+        match self.mode:
+
+            case "Sourcemeter pulse mode":
+                try:
+                    #Prepare keithley 
+                    if self.sourcemeter_device == "Keithley 2600":
+                        self.keithley = Keithley2600(self.keithley_address)
+                        #self.keithley.ChA.single_pulse_prepare(self.pulse_voltage, self.pulse_time, self.pulse_range)
+                        self.keithley.ChB.compliance_current = self.compliance
+                        self.keithley.ChB.measure_nplc = self.nplc
+                    else: 
+                        self.keithley = Keithley2400(self.keithley_address)
+                        self.keithley.source_mode("Voltage")
+                        self.keithley.source_voltage_range(20)
+                        self.keithley.compliance_current(self.compliance)
+                        self.keithley.voltage_nplc(self.nplc)
+                        self.keithley.measure_current()
+                        
+                    log.info("Sourcemeter connected")
+                except Exception as e:
+                    print(e)
+                    self.keithley = Keithley2600Dummy()
+                    log.warning("Could not connect to the sourcemeter. Use dummy.")
+                    
+                #Prepare multimeter
+                try:
+                    self.multimeter = Keithley2700(self.multimeter_address)
+                    self.multimeter.open_all_channels()
+                    self.multimeter.set_voltage()
+                    self.multimeter.set_averaging(self.average)
+                    log.info("Multimeter connected")
+                    
+                except:
+                    self.multimeter = Keithley2700Dummy()
+                    log.warning("Could not connect to the multimeter. Use dummy.")
+
+            case "Multimeter mode": 
+                try:
+                    self.multimeter = Keithley2700(self.multimeter_address)
+                    self.multimeter.open_all_channels()
+                    self.multimeter.set_voltage()
+                    self.multimeter.set_averaging(self.average)
+                    log.info("Multimeter connected")
+                except:
+                    self.multimeter = Keithley2700Dummy()
+                    log.warning("Could not connect to the multimeter. Use dummy.")
+
     
     
     def execute(self):
         licznik = 0
-        for i in self.vector:
-            log.info("Close sourcemeter channel to probe")
-            match self.mode_source:
-                case "A->B":
-                    self.multimeter.close_rows_to_columns(int(self.switch_source_minus[4:5]), int(self.probe_1[4:5]))
-                    self.multimeter.close_rows_to_columns(int(self.switch_source_plus[4:5]), int(self.probe_2[4:5]))
-                case "A->C":
-                    self.multimeter.close_rows_to_columns(int(self.switch_source_minus[4:5]), int(self.probe_1[4:5]))
-                    self.multimeter.close_rows_to_columns(int(self.switch_source_plus[4:5]), int(self.probe_3[4:5]))
-                case "A->D":
-                    self.multimeter.close_rows_to_columns(int(self.switch_source_minus[4:5]), int(self.probe_1[4:5]))
-                    self.multimeter.close_rows_to_columns(int(self.switch_source_plus[4:5]), int(self.probe_4[4:5]))
-                case "B->C":
-                    self.multimeter.close_rows_to_columns(int(self.switch_source_minus[4:5]), int(self.probe_2[4:5]))
-                    self.multimeter.close_rows_to_columns(int(self.switch_source_plus[4:5]), int(self.probe_3[4:5]))
-                case "B->D":
-                    self.multimeter.close_rows_to_columns(int(self.switch_source_minus[4:5]), int(self.probe_2[4:5]))
-                    self.multimeter.close_rows_to_columns(int(self.switch_source_plus[4:5]), int(self.probe_4[4:5]))
-                case "C->D":
-                    self.multimeter.close_rows_to_columns(int(self.switch_source_minus[4:5]), int(self.probe_3[4:5]))
-                    self.multimeter.close_rows_to_columns(int(self.switch_source_plus[4:5]), int(self.probe_4[4:5]))
-                case "A,B->C,D":
-                    self.multimeter.close_rows_to_columns(int(self.switch_source_minus[4:5]), int(self.probe_1[4:5]))
-                    self.multimeter.close_rows_to_columns(int(self.switch_source_plus[4:5]), int(self.probe_2[4:5]))
-                    self.multimeter.close_rows_to_columns(int(self.switch_source_minus[4:5]), int(self.probe_4[4:5]))
-                    self.multimeter.close_rows_to_columns(int(self.switch_source_plus[4:5]), int(self.probe_3[4:5]))
-                case "A,D,->B,C":
-                    self.multimeter.close_rows_to_columns(int(self.switch_source_minus[4:5]), int(self.probe_1[4:5]))
-                    self.multimeter.close_rows_to_columns(int(self.switch_source_plus[4:5]), int(self.probe_4[4:5]))
-                    self.multimeter.close_rows_to_columns(int(self.switch_source_minus[4:5]), int(self.probe_2[4:5]))
-                    self.multimeter.close_rows_to_columns(int(self.switch_source_plus[4:5]), int(self.probe_3[4:5]))
-            sleep(1)
-            log.info("Run voltage pulses")
-            if self.sourcemeter_device == "Keithley 2600":
-                self.keithley.ChB.pulse_script_v(0, i, self.pulse_time, self.pulse_delay, self.number_of_pulses, self.compliance )
-                sleep(1)
-                self.keithley.reset()
-            else: 
-                self.keithley.pulse(self.pulse_time, i)
-            log.info("End of pulses")
-            sleep(0.5)
-            self.multimeter.open_all_channels()
-            self.multimeter.closed_channels("150")
-            #self.multimeter.closed_channels("150")
-            log.info("Close channels to measure")
-            sleep(0.5)
-            match self.mode_source:
-                case "A->B":
-                    self.multimeter.close_rows_to_columns(int(self.switch_source_minus[4:5]), int(self.probe_1[4:5]))
-                    self.multimeter.close_rows_to_columns(int(self.switch_source_plus[4:5]), int(self.probe_2[4:5]))
-                case "A->C":
-                    self.multimeter.close_rows_to_columns(int(self.switch_source_minus[4:5]), int(self.probe_1[4:5]))
-                    self.multimeter.close_rows_to_columns(int(self.switch_source_plus[4:5]), int(self.probe_3[4:5]))
-                case "A->D":
-                    self.multimeter.close_rows_to_columns(int(self.switch_source_minus[4:5]), int(self.probe_1[4:5]))
-                    self.multimeter.close_rows_to_columns(int(self.switch_source_plus[4:5]), int(self.probe_4[4:5]))
-                case "B->C":
-                    self.multimeter.close_rows_to_columns(int(self.switch_source_minus[4:5]), int(self.probe_2[4:5]))
-                    self.multimeter.close_rows_to_columns(int(self.switch_source_plus[4:5]), int(self.probe_3[4:5]))
-                case "B->D":
-                    self.multimeter.close_rows_to_columns(int(self.switch_source_minus[4:5]), int(self.probe_2[4:5]))
-                    self.multimeter.close_rows_to_columns(int(self.switch_source_plus[4:5]), int(self.probe_4[4:5]))
-                case "C->D":
-                    self.multimeter.close_rows_to_columns(int(self.switch_source_minus[4:5]), int(self.probe_3[4:5]))
-                    self.multimeter.close_rows_to_columns(int(self.switch_source_plus[4:5]), int(self.probe_4[4:5]))
-                case "A,B->C,D":
-                    self.multimeter.close_rows_to_columns(int(self.switch_source_minus[4:5]), int(self.probe_1[4:5]))
-                    self.multimeter.close_rows_to_columns(int(self.switch_source_plus[4:5]), int(self.probe_2[4:5]))
-                    self.multimeter.close_rows_to_columns(int(self.switch_source_minus[4:5]), int(self.probe_4[4:5]))
-                    self.multimeter.close_rows_to_columns(int(self.switch_source_plus[4:5]), int(self.probe_3[4:5]))
-                case "A,D,->B,C":
-                    self.multimeter.close_rows_to_columns(int(self.switch_source_minus[4:5]), int(self.probe_1[4:5]))
-                    self.multimeter.close_rows_to_columns(int(self.switch_source_plus[4:5]), int(self.probe_4[4:5]))
-                    self.multimeter.close_rows_to_columns(int(self.switch_source_minus[4:5]), int(self.probe_2[4:5]))
-                    self.multimeter.close_rows_to_columns(int(self.switch_source_plus[4:5]), int(self.probe_3[4:5]))
-            sleep(1)
-            match self.mode_multimeter:
-                case "A->C":
-                    self.multimeter.close_rows_to_columns(1,int(self.probe_1[4:5]))
-                    self.multimeter.close_rows_to_columns(1,int(self.probe_3[4:5]))
-                    
-                case "B->D":
-                    self.multimeter.close_rows_to_columns(1,int(self.probe_2[4:5]))
-                    self.multimeter.close_rows_to_columns(1,int(self.probe_4[4:5]))
-                  
-                case "A->B":
-                    self.multimeter.close_rows_to_columns(1,int(self.probe_1[4:5]))
-                    self.multimeśter.close_rows_to_columns(1,int(self.probe_2[4:5]))
-                   
-                case "C->D":
-                    self.multimeter.close_rows_to_columns(1,int(self.probe_3[4:5]))
-                    self.multimeter.close_rows_to_columns(1,int(self.probe_4[4:5]))
-                   
-            sleep(0.5)
-            log.info("Measure resistance")
-            if self.sourcemeter_device == "Keithley 2600":
-                self.keithley.ChB.source_mode = "voltage"
-                self.keithley.ChB.auto_range_source('voltage')
-                self.keithley.ChB.source_voltage = self.bias_voltage
-                self.keithley.ChB.compliance_current = self.compliance 
-                self.keithley.ChB.current_range =self.compliance
+        match self.mode:
+            case "Sourcemeter pulse mode":
+                for i in self.vector:
+                    log.info("Close sourcemeter channel to probe")
+                    match self.mode_source:
+                        case "A->B":
+                            self.multimeter.close_rows_to_columns(int(self.switch_source_minus[4:5]), int(self.probe_1[4:5]))
+                            self.multimeter.close_rows_to_columns(int(self.switch_source_plus[4:5]), int(self.probe_2[4:5]))
+                        case "A->C":
+                            self.multimeter.close_rows_to_columns(int(self.switch_source_minus[4:5]), int(self.probe_1[4:5]))
+                            self.multimeter.close_rows_to_columns(int(self.switch_source_plus[4:5]), int(self.probe_3[4:5]))
+                        case "A->D":
+                            self.multimeter.close_rows_to_columns(int(self.switch_source_minus[4:5]), int(self.probe_1[4:5]))
+                            self.multimeter.close_rows_to_columns(int(self.switch_source_plus[4:5]), int(self.probe_4[4:5]))
+                        case "B->C":
+                            self.multimeter.close_rows_to_columns(int(self.switch_source_minus[4:5]), int(self.probe_2[4:5]))
+                            self.multimeter.close_rows_to_columns(int(self.switch_source_plus[4:5]), int(self.probe_3[4:5]))
+                        case "B->D":
+                            self.multimeter.close_rows_to_columns(int(self.switch_source_minus[4:5]), int(self.probe_2[4:5]))
+                            self.multimeter.close_rows_to_columns(int(self.switch_source_plus[4:5]), int(self.probe_4[4:5]))
+                        case "C->D":
+                            self.multimeter.close_rows_to_columns(int(self.switch_source_minus[4:5]), int(self.probe_3[4:5]))
+                            self.multimeter.close_rows_to_columns(int(self.switch_source_plus[4:5]), int(self.probe_4[4:5]))
+                        case "A,B->C,D":
+                            self.multimeter.close_rows_to_columns(int(self.switch_source_minus[4:5]), int(self.probe_1[4:5]))
+                            self.multimeter.close_rows_to_columns(int(self.switch_source_plus[4:5]), int(self.probe_2[4:5]))
+                            self.multimeter.close_rows_to_columns(int(self.switch_source_minus[4:5]), int(self.probe_4[4:5]))
+                            self.multimeter.close_rows_to_columns(int(self.switch_source_plus[4:5]), int(self.probe_3[4:5]))
+                        case "A,D,->B,C":
+                            self.multimeter.close_rows_to_columns(int(self.switch_source_minus[4:5]), int(self.probe_1[4:5]))
+                            self.multimeter.close_rows_to_columns(int(self.switch_source_plus[4:5]), int(self.probe_4[4:5]))
+                            self.multimeter.close_rows_to_columns(int(self.switch_source_minus[4:5]), int(self.probe_2[4:5]))
+                            self.multimeter.close_rows_to_columns(int(self.switch_source_plus[4:5]), int(self.probe_3[4:5]))
+                    sleep(1)
 
-                self.keithley.ChB.measure_nplc = self.nplc
-        
-                self.keithley.ChB.source_output = 'ON'
-                sleep(0.4)
+        #Run pulses: 
+                    log.info("Run voltage pulses")
+                    if self.sourcemeter_device == "Keithley 2600":
+                        self.keithley.ChB.pulse_script_v(0, i, self.pulse_time, self.pulse_delay, self.number_of_pulses, self.compliance )
+                        sleep(1)
+                        self.keithley.reset()
+                    else: 
+                        self.keithley.pulse(self.pulse_time, i)
+                    log.info("End of pulses")
+                    sleep(0.5)
 
-                self.current_sense_list = []
-                for iter in range(self.average):
-                    flag = True
-                    while flag:
-                        try:
-                            self.current_sense_list.append(self.keithley.ChB.read_current())
-                            flag = False
-                            print('iteration' + str(iter))
-                        except:
-                            sleep(0.1)
-                            flag = True
-                self.current_sense = np.average(self.current_sense_list)
-                print(self.current_sense)
-            else:  
-                self.keithley.source_voltage(self.bias_voltage)
-                sleep(0.3)
-                self.keithley.enable_source()
-                sleep(0.3)
-                self.current_sense = self.keithley.current()
+        # Measure procedure:
+                    self.multimeter.open_all_channels()
+                    self.multimeter.closed_channels("150")
+                    #self.multimeter.closed_channels("150")
+                    log.info("Close channels to measure")
+                    sleep(0.5)
+                    match self.mode_source:
+                        case "A->B":
+                            self.multimeter.close_rows_to_columns(int(self.switch_source_minus[4:5]), int(self.probe_1[4:5]))
+                            self.multimeter.close_rows_to_columns(int(self.switch_source_plus[4:5]), int(self.probe_2[4:5]))
+                        case "A->C":
+                            self.multimeter.close_rows_to_columns(int(self.switch_source_minus[4:5]), int(self.probe_1[4:5]))
+                            self.multimeter.close_rows_to_columns(int(self.switch_source_plus[4:5]), int(self.probe_3[4:5]))
+                        case "A->D":
+                            self.multimeter.close_rows_to_columns(int(self.switch_source_minus[4:5]), int(self.probe_1[4:5]))
+                            self.multimeter.close_rows_to_columns(int(self.switch_source_plus[4:5]), int(self.probe_4[4:5]))
+                        case "B->C":
+                            self.multimeter.close_rows_to_columns(int(self.switch_source_minus[4:5]), int(self.probe_2[4:5]))
+                            self.multimeter.close_rows_to_columns(int(self.switch_source_plus[4:5]), int(self.probe_3[4:5]))
+                        case "B->D":
+                            self.multimeter.close_rows_to_columns(int(self.switch_source_minus[4:5]), int(self.probe_2[4:5]))
+                            self.multimeter.close_rows_to_columns(int(self.switch_source_plus[4:5]), int(self.probe_4[4:5]))
+                        case "C->D":
+                            self.multimeter.close_rows_to_columns(int(self.switch_source_minus[4:5]), int(self.probe_3[4:5]))
+                            self.multimeter.close_rows_to_columns(int(self.switch_source_plus[4:5]), int(self.probe_4[4:5]))
+                        case "A,B->C,D":
+                            self.multimeter.close_rows_to_columns(int(self.switch_source_minus[4:5]), int(self.probe_1[4:5]))
+                            self.multimeter.close_rows_to_columns(int(self.switch_source_plus[4:5]), int(self.probe_2[4:5]))
+                            self.multimeter.close_rows_to_columns(int(self.switch_source_minus[4:5]), int(self.probe_4[4:5]))
+                            self.multimeter.close_rows_to_columns(int(self.switch_source_plus[4:5]), int(self.probe_3[4:5]))
+                        case "A,D,->B,C":
+                            self.multimeter.close_rows_to_columns(int(self.switch_source_minus[4:5]), int(self.probe_1[4:5]))
+                            self.multimeter.close_rows_to_columns(int(self.switch_source_plus[4:5]), int(self.probe_4[4:5]))
+                            self.multimeter.close_rows_to_columns(int(self.switch_source_minus[4:5]), int(self.probe_2[4:5]))
+                            self.multimeter.close_rows_to_columns(int(self.switch_source_plus[4:5]), int(self.probe_3[4:5]))
+                    sleep(1)
+                    match self.mode_multimeter:
+                        case "A->C":
+                            self.multimeter.close_rows_to_columns(1,int(self.probe_1[4:5]))
+                            self.multimeter.close_rows_to_columns(1,int(self.probe_3[4:5]))
+                            
+                        case "B->D":
+                            self.multimeter.close_rows_to_columns(1,int(self.probe_2[4:5]))
+                            self.multimeter.close_rows_to_columns(1,int(self.probe_4[4:5]))
+                          
+                        case "A->B":
+                            self.multimeter.close_rows_to_columns(1,int(self.probe_1[4:5]))
+                            self.multimeter.close_rows_to_columns(1,int(self.probe_2[4:5]))
+                           
+                        case "C->D":
+                            self.multimeter.close_rows_to_columns(1,int(self.probe_3[4:5]))
+                            self.multimeter.close_rows_to_columns(1,int(self.probe_4[4:5]))
+                           
+                    sleep(0.5)
+                    log.info("Measure resistance")
+                    if self.sourcemeter_device == "Keithley 2600":
+                        self.keithley.ChB.source_mode = "voltage"
+                        self.keithley.ChB.auto_range_source('voltage')
+                        self.keithley.ChB.source_voltage = self.bias_voltage
+                        self.keithley.ChB.compliance_current = self.compliance 
+                        self.keithley.ChB.current_range =self.compliance
+
+                        self.keithley.ChB.measure_nplc = self.nplc
                 
-            sleep(0.8)
-            self.voltage_sense = self.multimeter.read()
-            sleep(0.3)
-            if self.sourcemeter_device == "Keithley 2600":
-                self.keithley.ChB.shutdown()
-                self.keithley.reset()
-            else:
-                self.keithley.shutdown()
-            
-            self.multimeter.open_all_channels()
-        
+                        self.keithley.ChB.source_output = 'ON'
+                        sleep(0.4)
 
-    
-            data = {
-                'Pulse Voltage (V)': float(i),
-                'Current (A)': float(self.current_sense),
-                'Sense voltage (V)': float(self.voltage_sense),
-                'Resistance (ohm)': float(self.voltage_sense)/float(self.current_sense)
-                }
-            self.emit('results', data)
-            log.info("Step {} of {}".format(licznik, len(self.vector)))
-            self.emit('progress', 100 * licznik / len(self.vector))
-            
-            licznik = licznik + 1
+                        self.current_sense_list = []
+                        for iter in range(self.average):
+                            flag = True
+                            while flag:
+                                try:
+                                    self.current_sense_list.append(self.keithley.ChB.read_current())
+                                    flag = False
+                                    print('iteration' + str(iter))
+                                except:
+                                    sleep(0.1)
+                                    flag = True
+                        self.current_sense = np.average(self.current_sense_list)
+                        print(self.current_sense)
+                    else:  
+                        self.keithley.source_voltage(self.bias_voltage)
+                        sleep(0.3)
+                        self.keithley.enable_source()
+                        sleep(0.3)
+                        self.current_sense = self.keithley.current()
+                        
+                    sleep(0.3)
+                    self.voltage_sense = self.multimeter.read()
+                    sleep(0.3)
+                    if self.sourcemeter_device == "Keithley 2600":
+                        self.keithley.ChB.shutdown()
+                        self.keithley.reset()
+                    else:
+                        self.keithley.shutdown()
                     
-            
-            if self.should_stop():
-                log.warning("Caught the stop flag in the procedure")
-                break
+                    self.multimeter.open_all_channels()
+                
 
-        #shutdown instruments 
-        self.keithley.ChB.shutdown()   
+            
+                    data = {
+                        'Pulse Voltage (V)': float(i),
+                        'Current (A)': float(self.current_sense),
+                        'Sense voltage (V)': float(self.voltage_sense),
+                        'Resistance (ohm)': float(self.voltage_sense)/float(self.current_sense)
+                        }
+                    self.emit('results', data)
+                    log.info("Step {} of {}".format(licznik, len(self.vector)))
+                    self.emit('progress', 100 * licznik / len(self.vector))
+                    
+                    licznik = licznik + 1
+                            
+                    
+                    if self.should_stop():
+                        log.warning("Caught the stop flag in the procedure")
+                        break
+
+                #shutdown instruments 
+                self.keithley.ChB.shutdown()   
 
     
     def shutdown(self):
@@ -274,7 +296,7 @@ class MainWindow(ManagedDockWindow):
     def __init__(self):
         super().__init__(
             procedure_class=SolarisMesurement,
-            inputs=['sample','keithley_address', 'multimeter_address', 'sourcemeter_device' , 'pulse_time', 'pulse_delay', 'number_of_pulses', 'average', 'bias_voltage', 'compliance', 'nplc', 'vector_param', 'probe_1', 'probe_2', 'probe_3', 'probe_4', 'switch_source_plus', 'switch_source_minus', 'mode_source', 'mode_multimeter'],
+            inputs=['mode','sample','keithley_address', 'multimeter_address', 'sourcemeter_device' , 'pulse_time', 'pulse_delay', 'number_of_pulses', 'average', 'bias_voltage', 'compliance', 'nplc', 'vector_param', 'probe_1', 'probe_2', 'probe_3', 'probe_4', 'switch_source_plus', 'switch_source_minus', 'mode_source', 'mode_multimeter'],
             displays=['sample'],
             x_axis=['Pulse Voltage (V)', 'Current (A)'],
             y_axis=['Pulse Voltage (V)', 'Resistance (ohm)'],

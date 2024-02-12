@@ -18,7 +18,12 @@ class Keithley2700:
         rm= pyvisa.ResourceManager()
         self.instrument = rm.open_resource(adapter)
         
-   
+    def set_home_reading_screen(self):
+        self.instrument.write("DISP:CLE")
+        self.instrument.write("DISP:SCR:HOME_LARG")
+
+    def set_watching_channels(self, channel): 
+        pass
     def closed_channels(self, channel):
         self.instrument.write("ROUT:MULT:CLOS (@%s)"%channel)
     def open_all_channels(self):
