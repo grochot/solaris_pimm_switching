@@ -190,7 +190,7 @@ class SolarisMesurement(Procedure):
                   
                 case "A->B":
                     self.multimeter.close_rows_to_columns(1,int(self.probe_1[4:5]))
-                    self.multimeśter.close_rows_to_columns(1,int(self.probe_2[4:5]))
+                    self.multimeter.close_rows_to_columns(1,int(self.probe_2[4:5]))
                    
                 case "C->D":
                     self.multimeter.close_rows_to_columns(1,int(self.probe_3[4:5]))
