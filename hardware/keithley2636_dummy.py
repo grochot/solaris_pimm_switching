@@ -149,7 +149,6 @@ class Channel:
 
     def config_pulse_v(self):
         pass
-
     def config_pulse_i(self):
         pass
 
@@ -162,7 +161,7 @@ class Channel:
     def reset_smu(self):
         pass
 
-    def auto_range_source(self):
+    def auto_range_source(self, ss):
        pass
 
     def apply_current(self, current_range=None, compliance_voltage=0.1):

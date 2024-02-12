@@ -83,18 +83,18 @@ class Keithley2700:
         self.instrument.write("ROUT:MULT:CLOS (@%s)"%self.number)
         return self.number
 
-k = Keithley2700("GPIB1::18::INSTR")
-# #k.open_all_channels()
-# # # # from time import sleep
-# k.closed_channels("125")
-# k.closed_channels("138")
-# k.closed_channels("103")
-# k.closed_channels("108")
-# k.closed_channels("150")
-k.set_averaging(10)
-k.set_voltage()
-time.sleep(2)
-print(k.read())
+# k = Keithley2700("GPIB1::18::INSTR")
+# # #k.open_all_channels()
+# # # # # from time import sleep
+# # k.closed_channels("125")
+# # k.closed_channels("138")
+# # k.closed_channels("103")
+# # k.closed_channels("108")
+# # k.closed_channels("150")
+# k.set_averaging(10)
+# k.set_voltage()
+# time.sleep(2)
+# print(k.read())
 
 # # print(k.close_rows_to_columns(2,6))
 

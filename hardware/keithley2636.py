@@ -126,9 +126,6 @@ class Channel:
     measure_nplc = Instrument.control(
         'measure.nplc', 'measure.nplc=%f',
         """ Property controlling the nplc value """,
-        validator=truncated_range,
-        values=[0.001, 25],
-        map_values=True
     )
 
     ###############
@@ -325,10 +322,10 @@ class Channel:
     def reset_smu(self):
         self.writeall('smub.reset()')
 
-    def auto_range_source(self):
+    def auto_range_source(self, source_mode):
         """ Configures the source to use an automatic range.
         """
-        if self.source_mode == 'current':
+        if source_mode == 'current':
             self.write('source.autorangei=1')
         else:
             self.write('source.autorangev=1')
@@ -348,7 +345,7 @@ class Channel:
         else:
             self.source_current_range = current_range
         self.compliance_voltage = compliance_voltage
-        self.check_errors()
+        #self.check_errors()
 
     def apply_voltage(self, voltage_range=None,
                       compliance_current=0.1):
@@ -400,17 +397,32 @@ class Channel:
         #     self.ramp_to_voltage(0.0)
         self.source_output = 'OFF'
 
+    def read_current(self): 
+        return self.ask('measure.i()')
+
 # from time import sleep
-k = Keithley2600('GPIB1::26::INSTR') 
-
-# # # #k.ChB.pulse_script_v(0, 2, 2,2, 2, 0.001)
-
-k.ChB.measure_current(1, 3,1)
-k.ChB.source_mode = "voltage"
-k.ChB.compliance_current = 0.01
-k.ChB.source_voltage = 0.1
-k.ChB.source_output = 'ON'
-time.sleep(0.4)
-current_sense = k.ChB.current    
-print(current_sense)
-# # # # # k.ChB.source_output = 'OFF'
+# k = Keithley2600('GPIB0::26::INSTR')
+# #print(k.ChB.read_current() ) 
+# k.reset()
+# k.ChB.pulse_script_v(0, 2, 2,2, 2, 0.001)
+# time.sleep(0.3)
+# k.reset()
+# time.sleep(0.3)
+# k.ChB.measure_current(1, 3,1)
+# k.ChB.source_mode = "voltage"
+# k.ChB.compliance_current = 0.01
+# k.ChB.source_voltage = 0.1
+# k.ChB.source_output = 'ON'
+# time.sleep(0.4)
+# flag = True
+# while flag:
+#     try:
+#         current_sense = k.ChB.current   
+#         flag = False
+#     except:
+#         k.reset()
+#         print("error")
+#         time.sleep(0.5)
+#         flag = True
+# print(current_sense)
+# k.ChB.source_output = 'OFF'
