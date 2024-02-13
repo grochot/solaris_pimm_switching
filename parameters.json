@@ -1,17 +1,17 @@
 {
-    "mode": "Sourcemeter pulse mode",
+    "mode": "Multimeter Mode",
     "sample": "MgO001_Pt_NiO_30deg_sw01",
-    "keithley_address": "GPIB0::26::INSTR",
+    "keithley_address": "GPIB0::24::INSTR",
     "multimeter_address": "GPIB0::18::INSTR",
-    "sourcemeter_device": "Keithley 2600",
-    "pulse_time": 0.01,
-    "pulse_delay": 0.02,
+    "sourcemeter_device": "Keithley 2400",
+    "pulse_time": 0.2,
+    "pulse_delay": 0.5,
     "number_of_pulses": 1,
-    "average": 15,
+    "average": 4,
     "bias_voltage": 0.1,
-    "compliance": 0.5,
+    "compliance": 1.0,
     "nplc": 1.0,
-    "vector_param": "0,8,0.2,16,-0.2,8,0",
+    "vector_param": "0,100,1",
     "probe_1": "Col 1",
     "probe_2": "Col 8",
     "probe_3": "Col 3",
@@ -19,5 +19,5 @@
     "switch_source_plus": "Row 5",
     "switch_source_minus": "Row 4",
     "mode_source": "A->B",
-    "mode_multimeter": "C->D"
+    "mode_multimeter": "A->B"
 }

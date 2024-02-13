@@ -73,7 +73,9 @@ class Keithley2600(Instrument):
             if (time.time() - t) > 10:
                 log.warning("Timed out for Keithley 2600 error retrieval.")
 
-
+    def opc(self): 
+        kk= self.ask("*OPC?")
+        return kk
 class Channel:
 
     def __init__(self, instrument, channel):
@@ -171,6 +173,12 @@ class Channel:
         'measure.v()',
         """ Reads the voltage in Volts """
     )
+
+    opc = Instrument.measurement(
+        'opc()',
+        """ Reads the voltage in Volts """
+    )
+
 
     source_voltage = Instrument.control(
         'source.levelv', 'source.levelv=%f',
@@ -275,10 +283,8 @@ class Channel:
         print()
 
     def pulse_script_v(self, bias, level, ton, toff, points, limiti): 
-        self.write('reset()')
         self.write('source.limiti = %s' %limiti)
-        self.writeall('PulseVMeasureI(smub,{}, {}, {}, {}, {})'.format(bias, level, ton, toff, points)) #PulseVMeasureI(smu, bias, level, ton, toff, points)
-        self.writeall('waitcomplete()') #PulseVMeasureI(smu, bias, level, ton, toff, points) 
+        self.writeall('PulseVMeasureI(smub,{}, {}, {}, {}, {})'.format(bias, level, ton, toff, points)) #PulseVMeasureI(smu, bias, level, ton, toff, points) 
     
     def pulse_script_i(self): 
         self.write('reset()')
@@ -292,14 +298,8 @@ class Channel:
         self.askall('printbuffer(1, 2, smub.nvbuffer1.readings)')
 
     def config_pulse_v(self):
-        self.writeall('smub.source.rangev = 5')
-        self.writeall('smub.source.levelv = 0')
-        self.writeall('smub.measure.rangev = 5')
-        self.writeall('smub.measure.rangei = 1')
-        self.writeall('smub.measure.nplc = 0.01')
-        self.writeall('smub.measure.autozero = smub.AUTOZERO_ONCE')
-        self.writeall('smub.source.output = smub.OUTPUT_ON')
-        self.askall('ConfigPulseVMeasureI(smub, 0.001, 0.5, 0.01, 0.5, 0.5, 3, smub.nvbuffer1, 1)') #ConfigPulseVMeasureI(smu, bias, level, limit, ton, toff, points, buffer,tag) 
+        self.write('reset()')
+        self.writeall('ConfigPulseVMeasureI(smub, 0, 0.1, 1, 0.800, 0.800, 10, smub.nvbuffer1, 2)') #ConfigPulseVMeasureI(smu, bias, level, limit, ton, toff, points, buffer,tag) 
 
 
     def config_pulse_i(self):
@@ -401,10 +401,27 @@ class Channel:
         return self.ask('measure.i()')
 
 # from time import sleep
-# k = Keithley2600('GPIB0::26::INSTR')
-# #print(k.ChB.read_current() ) 
-# k.reset()
-# k.ChB.pulse_script_v(0, 2, 2,2, 2, 0.001)
+# k = Keithley2600('GPIB0::26::INSTR', timeout=50000)
+# #print(k.opc())
+# # k.reset()
+# k.ChB.pulse_script_v(0, 0.1, 2,2, 2, 0.001)
+# flag = True
+# pp = k.opc()
+# # while flag:
+#     try: 
+#         if pp == 1: 
+#             sleep(0.3)
+#             flag = False
+#     except:
+#         flag = True
+#         sleep(0.2)
+
+# print(k.opc())
+# flag = True 
+# while flag: 
+#     try:
+#     print(k.opc)
+# print(k.ChB.read_current() ) 
 # time.sleep(0.3)
 # k.reset()
 # time.sleep(0.3)

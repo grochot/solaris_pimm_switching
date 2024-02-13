@@ -16,7 +16,9 @@ import pyvisa
 class Keithley2700Dummy:
     def __init__(self):
         pass
-        
+    
+    def opc(self):
+        pass
    
     def closed_channels(self, channel):
         pass

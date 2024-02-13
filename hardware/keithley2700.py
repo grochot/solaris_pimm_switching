@@ -66,7 +66,7 @@ class Keithley2700:
         self.instrument.write("DIOD:BIAS:LEVel %s"%level)
     
     def set_resistance(self): 
-        self.instrument.write("SENS:FUNC 'FRES'")
+        self.instrument.write("SENS:FUNC 'RES'")
         # time.sleep(0.5)
         # self.instrument.write("SENS:FRES:NPLC 1")
     def set_voltage(self):
@@ -88,16 +88,25 @@ class Keithley2700:
         self.instrument.write("ROUT:MULT:CLOS (@%s)"%self.number)
         return self.number
 
-# k = Keithley2700("GPIB1::18::INSTR")
-# # #k.open_all_channels()
-# # # # # from time import sleep
+
+##### TEST #######
+
+# k = Keithley2700("GPIB0::18::INSTR")
+# k.open_all_channels()
+# from time import sleep
 # # k.closed_channels("125")
 # # k.closed_channels("138")
-# # k.closed_channels("103")
-# # k.closed_channels("108")
-# # k.closed_channels("150")
-# k.set_averaging(10)
-# k.set_voltage()
+# k.closed_channels("103")
+# k.closed_channels("111")
+# k.closed_channels("116")
+# k.closed_channels("108")
+# k.closed_channels("150")
+# k.closed_channels("149")
+# # k.closed_channels("127")
+# # k.closed_channels("140")
+# # k.set_averaging(10)
+# k.set_resistance()
+# k.set_averaging(3)
 # time.sleep(2)
 # print(k.read())
 
