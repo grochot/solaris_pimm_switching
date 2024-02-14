@@ -425,7 +425,7 @@ class SolarisMesurement(Procedure):
                                     sleep(0.3)
                                     flag = True
                         self.current_sense = np.average(self.current_sense_list)
-                        print(self.current_sense)
+            
                     else:  
                         self.keithley.source_mode = 'VOLT'
                         self.keithley.compliance_current = self.compliance
@@ -445,13 +445,13 @@ class SolarisMesurement(Procedure):
                         self.current_sense = np.average(single_meas)
                         
                     self.voltage_sense = self.multimeter.read()
-                    print(self.current_sense)
+                
                     window.set_resistance(str(round(float(self.voltage_sense)/float(self.current_sense))))
                     data = {
                         'index': no_number,
                         'Resistance (ohm)': float(self.voltage_sense)/float(self.current_sense)
                         }
-                    #self.emit('results', data)
+                    self.emit('results', data)
                     
                     
                     licznik = licznik + 1
@@ -485,15 +485,12 @@ class SolarisMesurement(Procedure):
 class MainWindow(ManagedWindowBase):
 
     def __init__(self):
-        widget_list = (TableWidget("Experiment Table",
-                                     SolarisMesurement.DATA_COLUMNS,
-                                    by_column=True,
-                                    column_index=None
-                                    ),
+        widget_list = (
                         LogWidget("Experiment Log"),
                         PlotWidget("Graph",['Pulse Voltage (V)', 'Current (A)', 'Sense voltage (V)', 'Resistance (ohm)'] )
                         
                         )
+       
         super().__init__(
             procedure_class=SolarisMesurement,
             inputs=['mode','sample', 'resistance_value', 'keithley_address', 'multimeter_address', 'sourcemeter_device' , 'pulse_time', 'pulse_delay', 'number_of_pulses', 'average', 'bias_voltage', 'compliance', 'nplc', 'vector_param', 'probe_1', 'probe_2', 'probe_3', 'probe_4', 'switch_source_plus', 'switch_source_minus', 'mode_source', 'mode_multimeter'],
@@ -503,7 +500,7 @@ class MainWindow(ManagedWindowBase):
             inputs_in_scrollarea=True,
             widget_list=widget_list,
         )
-        logging.getLogger().addHandler(widget_list[1].handler)
+        logging.getLogger().addHandler(widget_list[0].handler)
         log.setLevel(self.log_level)
         log.info("ManagedWindow connected to logging")
         self.setWindowTitle('Solaris Measurement')
