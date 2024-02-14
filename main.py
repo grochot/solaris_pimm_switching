@@ -478,8 +478,8 @@ class SolarisMesurement(Procedure):
         multimeter.close_to_mass()
 
     def close_off(self):
-        self.multimeter = Keithley2700(self.multimeter_address)
-        self.multimeter.open_all_channels()
+        multimeter = Keithley2700(self.multimeter_address)
+        multimeter.open_all_channels()
             
 
 class MainWindow(ManagedWindowBase):

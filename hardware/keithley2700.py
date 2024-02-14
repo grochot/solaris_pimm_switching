@@ -60,7 +60,8 @@ class Keithley2700:
         channel = str(108 + int(channel))
         return channel
     def close_to_mass(self):
-        self.instrument.write("ROUT:MULT:CLOS (@141,142,143,144,145,146,147,148,149,150)")
+        self.open_all_channels()
+        self.instrument.write("ROUT:MULT:CLOS (@117,118,119,120,121,122,123,124)")
         print("All channels are closed to mass")
 
     def pulse_level(self, level):

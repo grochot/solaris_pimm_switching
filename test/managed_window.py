@@ -564,7 +564,7 @@ class ManagedWindowBase(QtWidgets.QMainWindow):
         self.zewrzyj_button.setEnabled(True)
         self.rozewrzyj_button.setEnabled(False)
         self.queue_button.setEnabled(True)
-        self.circuit_on()
+        self.circuit_off()
 
     def circuit_off(self):
         pass
