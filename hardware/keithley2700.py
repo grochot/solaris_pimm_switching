@@ -18,7 +18,12 @@ class Keithley2700:
         rm= pyvisa.ResourceManager()
         self.instrument = rm.open_resource(adapter)
         
-   
+    def set_home_reading_screen(self):
+        self.instrument.write("DISP:CLE")
+        self.instrument.write("DISP:SCR:HOME_LARG")
+
+    def set_watching_channels(self, channel): 
+        pass
     def closed_channels(self, channel):
         self.instrument.write("ROUT:MULT:CLOS (@%s)"%channel)
     def open_all_channels(self):
@@ -55,13 +60,15 @@ class Keithley2700:
         channel = str(108 + int(channel))
         return channel
     def close_to_mass(self):
-        self.instrument.write("ROUT:MULT:CLOS (@141,142,143,144,145,146,147,148,149,150)")
+        self.open_all_channels()
+        self.instrument.write("ROUT:MULT:CLOS (@117,118,119,120,121,122,123,124)")
+        print("All channels are closed to mass")
 
     def pulse_level(self, level):
         self.instrument.write("DIOD:BIAS:LEVel %s"%level)
     
     def set_resistance(self): 
-        self.instrument.write("SENS:FUNC 'FRES'")
+        self.instrument.write("SENS:FUNC 'RES'")
         # time.sleep(0.5)
         # self.instrument.write("SENS:FRES:NPLC 1")
     def set_voltage(self):
@@ -83,16 +90,25 @@ class Keithley2700:
         self.instrument.write("ROUT:MULT:CLOS (@%s)"%self.number)
         return self.number
 
-# k = Keithley2700("GPIB1::18::INSTR")
-# # #k.open_all_channels()
-# # # # # from time import sleep
+
+##### TEST #######
+
+# k = Keithley2700("GPIB0::18::INSTR")
+# k.open_all_channels()
+# from time import sleep
 # # k.closed_channels("125")
 # # k.closed_channels("138")
-# # k.closed_channels("103")
-# # k.closed_channels("108")
-# # k.closed_channels("150")
-# k.set_averaging(10)
-# k.set_voltage()
+# k.closed_channels("103")
+# k.closed_channels("111")
+# k.closed_channels("116")
+# k.closed_channels("108")
+# k.closed_channels("150")
+# k.closed_channels("149")
+# # k.closed_channels("127")
+# # k.closed_channels("140")
+# # k.set_averaging(10)
+# k.set_resistance()
+# k.set_averaging(3)
 # time.sleep(2)
 # print(k.read())
 

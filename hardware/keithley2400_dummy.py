@@ -1,37 +1,60 @@
-import numpy as np
-class Keithley2400Dummy:
 
-    def __init__(self, resource_name):
+import logging
+import time
+
+import numpy as np
+
+from pymeasure.instruments import Instrument, RangeException
+from pymeasure.instruments.validators import truncated_range, strict_discrete_set
+
+from pymeasure.instruments.keithley.buffer import KeithleyBuffer
+
+
+class Keithley2400Dummy():
+    def __init__(self, resourceName, **kwargs):
         pass
-    def source_mode(self, source_type):
-        pass
-    def source_voltage_range(self, voltage):
-        pass
-    def compliance_current(self, current):
-        pass 
+    source_mode = 1
+
+    voltage_range = 1
+
+    compliance_current = 1
+        
     def enable_source(self):
-        pass 
-    def measure_current(self):
-        pass 
-    def source_current_range(self, range):
         pass
-    def voltage_nplc(self, nplc):
+
+    def measure_current(self, nplc=1, current=1.05e-4, auto_range=True):
         pass
-    def compliance_voltage(self, voltage):
+        
+    current_range = 1
+    compliance_voltage = 1
+
+    def measure_voltage(self, nplc=1, voltage=21.0, auto_range=True):
         pass
-    def current_nplc(self, nplc):
-        pass
-    def measure_voltage(self):
-        pass
+   
     def shutdown(self):
         pass
-    def source_voltage(self, voltage):
-        pass
-    def source_current(self, current):
-        pass
-    def current(self):
-        return np.nan
-    def voltage(self):
-        return np.nan
 
+    def config_average(self, average):
+        pass
+    source_voltage = 1
+    
+    source_current = 1
+    
+    current = 1
+   
+    voltage = 1
+    
+    filter_type = 1
 
+    filter_count = 1
+    
+    means = 1
+    measure_concurent_functions = 1
+
+    def pulse(self,length, delay):
+        pass
+
+    def opc(self): 
+        pass
+    def reset(self):
+        pass
