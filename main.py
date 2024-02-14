@@ -200,8 +200,10 @@ class SolarisMesurement(Procedure):
                         for pulse_numbers in range(self.number_of_pulses):
                             self.keithley.pulse(self.pulse_time, self.pulse_delay)
                     
+
                     log.info("End of pulses")
                     sleep(0.5)
+
 
         # Measure procedure:
                     self.multimeter.open_all_channels()
