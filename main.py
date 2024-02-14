@@ -58,9 +58,8 @@ class SolarisMesurement(Procedure):
     switch_source_plus= ListParameter("Switch source +", choices=["Row 1", "Row 2", "Row 3", "Row 4", "Row 5", "Row 6"], default = parameters_from_file["switch_source_plus"])
     switch_source_minus= ListParameter("Switch source -", choices=["Row 1", "Row 2", "Row 3", "Row 4", "Row 5", "Row 6"], default = parameters_from_file["switch_source_minus"])
     mode_source = ListParameter("Mode source", choices=["A->B", "A->C", "A->D", "B->C", "B->D", "C->D", "A,B->C,D", "A,D,->B,C"], default = parameters_from_file["mode_source"])
-    mode_multimeter = ListParameter("Mode multimeter", choices=["A->C", "B->D", "A->B", "C->D"], default = parameters_from_file["mode_multimeter"])
-    
-
+    mode_multimeter = ListParameter("Mode multimeter", choices=["A->C", "B->D", "A->B", "C->D", "C->B", "A->D"], default = parameters_from_file["mode_multimeter"])
+    resistance_value = Parameter("Resistance Value")
     DATA_COLUMNS = ['index', 'Pulse Voltage (V)', 'Current (A)', 'Sense voltage (V)', 'Resistance (ohm)']
 
     def startup(self):
@@ -122,28 +121,28 @@ class SolarisMesurement(Procedure):
                 log.warning("Could not connect to the multimeter. Use dummy.")
             
                 #Prepare keithley 
-                if self.sourcemeter_device == "Keithley 2600":
-                    try:
-                        self.keithley = Keithley2600(self.keithley_address, timeout= 50000)
-                        #self.keithley.ChA.single_pulse_prepare(self.pulse_voltage, self.pulse_time, self.pulse_range)
-                        self.keithley.ChB.compliance_current = self.compliance
-                        self.keithley.ChB.measure_nplc = self.nplc
-                        log.info("Sourcemeter connected")
-                    except Exception as e:
-                        print(e)
-                        self.keithley = Keithley2600Dummy(self.keithley_address)
-                        log.warning("Could not connect to the sourcemeter. Use dummy.")
-                else: 
-                    try:
-                        self.keithley = Keithley2400(self.keithley_address)
-                        self.keithley.source_mode = 'VOLT'
-                        self.keithley.compliance_current = self.compliance
-                        self.keithley.measure_current(self.nplc, 1.05e-2, True)
-                        log.info("Sourcemeter connected")
-                    except Exception as e:
-                        print(e)
-                        self.keithley = Keithley2400Dummy(self.keithley_address)
-                        log.warning("Could not connect to the sourcemeter. Use dummy.")
+            if self.sourcemeter_device == "Keithley 2600":
+                try:
+                    self.keithley = Keithley2600(self.keithley_address, timeout= 50000)
+                    #self.keithley.ChA.single_pulse_prepare(self.pulse_voltage, self.pulse_time, self.pulse_range)
+                    self.keithley.ChB.compliance_current = self.compliance
+                    self.keithley.ChB.measure_nplc = self.nplc
+                    log.info("Sourcemeter connected")
+                except Exception as e:
+                    print(e)
+                    self.keithley = Keithley2600Dummy(self.keithley_address)
+                    log.warning("Could not connect to the sourcemeter. Use dummy.")
+            else: 
+                try:
+                    self.keithley = Keithley2400(self.keithley_address, timeout= 50000)
+                    self.keithley.source_mode = 'VOLT'
+                    self.keithley.compliance_current = self.compliance
+                    self.keithley.measure_current(self.nplc, 1.05e-2, True)
+                    log.info("Sourcemeter connected")
+                except Exception as e:
+                    print(e)
+                    self.keithley = Keithley2400Dummy(self.keithley_address)
+                    log.warning("Could not connect to the sourcemeter. Use dummy.")
                     
                
          
@@ -386,11 +385,17 @@ class SolarisMesurement(Procedure):
                     case "C->D":
                         self.multimeter.close_rows_to_columns(1,int(self.probe_3[4:5]))
                         self.multimeter.close_rows_to_columns(1,int(self.probe_4[4:5]))
+                    
+                    case "C->B":
+                        self.multimeter.close_rows_to_columns(1,int(self.probe_2[4:5]))
+                        self.multimeter.close_rows_to_columns(1,int(self.probe_3[4:5]))
+                    case "A->D":
+                        self.multimeter.close_rows_to_columns(1,int(self.probe_1[4:5]))
+                        self.multimeter.close_rows_to_columns(1,int(self.probe_4[4:5]))
                 no_number = 0
+                log.info("Measure resistance")
                 while True:
                     no_number = no_number + 1
-                    sleep(0.5)
-                    log.info("Measure resistance")
                     self.current_sense_list = []
                     if self.sourcemeter_device == "Keithley 2600":
                         self.keithley.ChB.source_mode = "voltage"
@@ -425,7 +430,7 @@ class SolarisMesurement(Procedure):
                         self.keithley.compliance_current = self.compliance
                         self.keithley.measure_current(self.nplc, 1.05e-2, True)
                         self.keithley.source_voltage = self.bias_voltage
-                        sleep(0.3)
+                      
                         self.keithley.config_average(self.average)
                         self.keithley.filter_type = "REP"
                         self.keithley.filter_count = self.average
@@ -434,31 +439,19 @@ class SolarisMesurement(Procedure):
                         sleep(0.3)
                     
                         single_meas = self.keithley.current
+                        self.keithley.opc()
             
                         self.current_sense = np.average(single_meas)
-                        print(self.current_sense)
-
                         
-                    sleep(0.3)
                     self.voltage_sense = self.multimeter.read()
-                    sleep(0.3)
-                    if self.sourcemeter_device == "Keithley 2600":
-                        self.keithley.ChB.shutdown()
-                    else:
-                        self.keithley.shutdown()
-                        self.keithley.reset()
-                    
-                    self.multimeter.open_all_channels()
-                
-
-            
+                    print(self.current_sense)
+                    window.set_resistance(str(round(float(self.voltage_sense)/float(self.current_sense))))
                     data = {
                         'index': no_number,
                         'Resistance (ohm)': float(self.voltage_sense)/float(self.current_sense)
                         }
-                    self.emit('results', data)
-                    log.info("Step {} of {}".format(licznik, len(self.vector)))
-                    self.emit('progress', 100 * licznik / len(self.vector))
+                    #self.emit('results', data)
+                    
                     
                     licznik = licznik + 1
                             
@@ -466,6 +459,13 @@ class SolarisMesurement(Procedure):
                     if self.should_stop():
                         log.warning("Caught the stop flag in the procedure")
                         break
+                if self.sourcemeter_device == "Keithley 2600":
+                        self.keithley.ChB.shutdown()
+                else:
+                        self.keithley.shutdown()
+                        self.keithley.reset()
+                    
+                self.multimeter.open_all_channels()
     
     def shutdown(self):
         log.info("Finished")
@@ -486,7 +486,7 @@ class MainWindow(ManagedWindowBase):
                         )
         super().__init__(
             procedure_class=SolarisMesurement,
-            inputs=['mode','sample','keithley_address', 'multimeter_address', 'sourcemeter_device' , 'pulse_time', 'pulse_delay', 'number_of_pulses', 'average', 'bias_voltage', 'compliance', 'nplc', 'vector_param', 'probe_1', 'probe_2', 'probe_3', 'probe_4', 'switch_source_plus', 'switch_source_minus', 'mode_source', 'mode_multimeter'],
+            inputs=['mode','sample', 'resistance_value', 'keithley_address', 'multimeter_address', 'sourcemeter_device' , 'pulse_time', 'pulse_delay', 'number_of_pulses', 'average', 'bias_voltage', 'compliance', 'nplc', 'vector_param', 'probe_1', 'probe_2', 'probe_3', 'probe_4', 'switch_source_plus', 'switch_source_minus', 'mode_source', 'mode_multimeter'],
             displays=['sample'],
            
             directory_input=True,
@@ -498,6 +498,9 @@ class MainWindow(ManagedWindowBase):
         log.info("ManagedWindow connected to logging")
         self.setWindowTitle('Solaris Measurement')
         self.directory = r'C:/Path/'
+
+    def set_resistance(self,value): 
+        self.inputs.resistance_value.setValue(value)
 
     def queue(self):
         directory = self.directory                               # Added line
