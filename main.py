@@ -12,7 +12,7 @@ from pymeasure.display.windows import ManagedWindowBase
 from pymeasure.display.widgets import TableWidget, LogWidget, PlotWidget
 
 from pymeasure.display.windows.managed_dock_window import ManagedDockWindow
-from pymeasure.experiment import Procedure, Results
+from pymeasure.experiment import Procedure, Results, procedure
 from pymeasure.experiment import IntegerParameter, FloatParameter, Parameter, ListParameter, BooleanParameter, unique_filename
 from hardware.keithley2636 import Keithley2600
 from hardware.keithley2636_dummy import Keithley2600Dummy
@@ -63,6 +63,7 @@ class SolarisMesurement(Procedure):
     DATA_COLUMNS = ['index', 'Pulse Voltage (V)', 'Current (A)', 'Sense voltage (V)', 'Resistance (ohm)']
 
     def startup(self):
+        mul_add = self.multimeter_address
         for i in self.used_parameters_list:
             self.param = eval("self."+i)
             self.parameters[i] = self.param
@@ -469,7 +470,16 @@ class SolarisMesurement(Procedure):
     
     def shutdown(self):
         log.info("Finished")
-        # self.keithley.ChB.shutdown()       
+        # self.keithley.ChB.shutdown()      
+    
+    
+    def close_on(self):
+        multimeter = Keithley2700(self.multimeter_address)
+        multimeter.close_to_mass()
+
+    def close_off(self):
+        self.multimeter = Keithley2700(self.multimeter_address)
+        self.multimeter.open_all_channels()
             
 
 class MainWindow(ManagedWindowBase):
@@ -501,6 +511,14 @@ class MainWindow(ManagedWindowBase):
 
     def set_resistance(self,value): 
         self.inputs.resistance_value.setValue(value)
+
+    def circuit_on(self):
+        procedure = self.make_procedure()
+        procedure.close_on()
+
+    def circuit_off(self):
+        procedure = self.make_procedure()
+        procedure.close_off()
 
     def queue(self):
         directory = self.directory                               # Added line
