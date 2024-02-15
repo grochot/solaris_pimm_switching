@@ -89,6 +89,7 @@ class SolarisMesurement(Procedure):
                     self.keithley.source_mode = 'VOLT'
                     self.keithley.compliance_current = self.compliance
                     self.keithley.measure_current(self.nplc, 1.05e-1, True)
+                    self.keithley.beeper(0)
                 except Exception as e:
                     print(e)
                     self.keithley = Keithley2400Dummy(self.keithley_address)
@@ -155,14 +156,14 @@ class SolarisMesurement(Procedure):
             case "Sourcemeter pulse mode":
                 
                 for i in self.vector:
+                    sleep(0.3)
                     self.multimeter.open_all_channels()
-                    sleep(0.5)
+                    sleep(0.3)
                     log.info("Close sourcemeter channel to probe")
                     match self.mode_source:
                         case "A->B":
-
-                            print(self.multimeter.close_rows_to_columns(int(self.switch_source_minus[4:5]), int(self.probe_1[4:5])))
-                            print(self.multimeter.close_rows_to_columns(int(self.switch_source_plus[4:5]), int(self.probe_2[4:5])))
+                            self.multimeter.close_rows_to_columns(int(self.switch_source_minus[4:5]), int(self.probe_1[4:5]))
+                            self.multimeter.close_rows_to_columns(int(self.switch_source_plus[4:5]), int(self.probe_2[4:5]))
                         case "A->C":
                             self.multimeter.close_rows_to_columns(int(self.switch_source_minus[4:5]), int(self.probe_1[4:5]))
                             self.multimeter.close_rows_to_columns(int(self.switch_source_plus[4:5]), int(self.probe_3[4:5]))
@@ -195,11 +196,11 @@ class SolarisMesurement(Procedure):
                     if self.sourcemeter_device == "Keithley 2600":
                         self.keithley.ChB.pulse_script_v(0, i, self.pulse_time, self.pulse_delay, self.number_of_pulses, self.compliance )
                         self.keithley.opc()
-                        self.keithley.reset()
+                        self.keithley.beeper(0)
                     else: 
                         #self.keithley.source_mode = 'VOLT'
                         self.keithley.source_voltage = i
-                        #self.keithley.compliance_current = self.compliance
+                        self.keithley.compliance_current = self.compliance
                         self.keithley.measure_current(self.nplc, 1.05e-1, True)
                         for pulse_numbers in range(self.number_of_pulses):
                             self.keithley.pulse(self.pulse_time, self.pulse_delay)
@@ -297,7 +298,7 @@ class SolarisMesurement(Procedure):
                     ########Keithley 2400###############
                     else:  
                         # self.keithley.source_mode = 'VOLT'
-                        # self.keithley.compliance_current = self.compliance
+                        self.keithley.compliance_current = self.compliance
                         self.keithley.measure_current(self.nplc, 1.05e-1, True)
                         self.keithley.source_voltage = self.bias_voltage
                         sleep(0.3)
@@ -321,6 +322,7 @@ class SolarisMesurement(Procedure):
                     else:
                         self.keithley.shutdown()
                         self.keithley.reset()
+                        self.keithley.beeper(0)
                     
                     self.multimeter.open_all_channels()
                 

@@ -86,8 +86,9 @@ class Keithley2700:
         return res
 
     def close_rows_to_columns(self,row, column):
-        self.number = str(100 + (row-1)*8 + column)
+        self.number = str(str(100 + (row-1)*8 + column))
         self.instrument.write("ROUT:MULT:CLOS (@%s)"%self.number)
+        time.sleep(0.2)
         return self.number
 
 
