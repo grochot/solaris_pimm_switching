@@ -86,24 +86,25 @@ class Keithley2700:
         return res
 
     def close_rows_to_columns(self,row, column):
-        self.number = str(100 + (row-1)*8 + column)
+        self.number = str(str(100 + (row-1)*8 + column))
         self.instrument.write("ROUT:MULT:CLOS (@%s)"%self.number)
+        time.sleep(0.2)
         return self.number
 
 
 ##### TEST #######
 
-# k = Keithley2700("GPIB0::18::INSTR")
+#k = Keithley2700("GPIB0::18::INSTR")
 # k.open_all_channels()
-# from time import sleep
-# # k.closed_channels("125")
-# # k.closed_channels("138")
+# # from time import sleep
+# k.closed_channels("125")
+# k.closed_channels("138")
 # k.closed_channels("103")
-# k.closed_channels("111")
-# k.closed_channels("116")
+# # k.closed_channels("111")
+# # k.closed_channels("116")
 # k.closed_channels("108")
 # k.closed_channels("150")
-# k.closed_channels("149")
+# # k.closed_channels("149")
 # # k.closed_channels("127")
 # # k.closed_channels("140")
 # # k.set_averaging(10)
@@ -112,7 +113,7 @@ class Keithley2700:
 # time.sleep(2)
 # print(k.read())
 
-# # print(k.close_rows_to_columns(2,6))
+#print(k.close_rows_to_columns(5,6))
 
 # # def close_rows_to_columns(row, column):
 # #     number = str(100 + (row-1)*8 + column)

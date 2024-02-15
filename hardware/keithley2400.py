@@ -175,3 +175,9 @@ class Keithley2400(Instrument):
     def reset(self):
         self.write('*RST')
 
+    def beeper(self, state):
+        self.write(":SYSTem:BEEPer:STATe {}".format(str(state)))
+
+# k = Keithley2400("GPIB0::24::INSTR")
+# k.beeper(0)
+# k.enable_source()

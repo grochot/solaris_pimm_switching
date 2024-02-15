@@ -57,7 +57,7 @@ class SolarisMesurement(Procedure):
     probe_4 = ListParameter("D", choices=[ "Col 1", "Col 2", "Col 3", "Col 4", "Col 5", "Col 6", "Col 7", "Col 8"], default = parameters_from_file["probe_4"])
     switch_source_plus= ListParameter("Switch source +", choices=["Row 1", "Row 2", "Row 3", "Row 4", "Row 5", "Row 6"], default = parameters_from_file["switch_source_plus"])
     switch_source_minus= ListParameter("Switch source -", choices=["Row 1", "Row 2", "Row 3", "Row 4", "Row 5", "Row 6"], default = parameters_from_file["switch_source_minus"])
-    mode_source = ListParameter("Mode source", choices=["A->B", "A->C", "A->D", "B->C", "B->D", "C->D", "A,B->C,D", "A,D,->B,C"], default = parameters_from_file["mode_source"])
+    mode_source = ListParameter("Mode source", choices=["A->B", "A->C", "A->D", "B->C", "B->D", "C->D", "A,C->B,D", "C,B,->A,D"], default = parameters_from_file["mode_source"])
     mode_multimeter = ListParameter("Mode multimeter", choices=["A->C", "B->D", "A->B", "C->D", "C->B", "A->D"], default = parameters_from_file["mode_multimeter"])
     resistance_value = Parameter("Resistance Value")
     DATA_COLUMNS = ['index', 'Pulse Voltage (V)', 'Current (A)', 'Sense voltage (V)', 'Resistance (ohm)']
@@ -88,7 +88,8 @@ class SolarisMesurement(Procedure):
                     self.keithley = Keithley2400(self.keithley_address)
                     self.keithley.source_mode = 'VOLT'
                     self.keithley.compliance_current = self.compliance
-                    self.keithley.measure_current(self.nplc, 1.05e-2, True)
+                    self.keithley.measure_current(self.nplc, 1.05e-1, True)
+                    self.keithley.beeper(0)
                 except Exception as e:
                     print(e)
                     self.keithley = Keithley2400Dummy(self.keithley_address)
@@ -153,7 +154,11 @@ class SolarisMesurement(Procedure):
         licznik = 0
         match self.mode:
             case "Sourcemeter pulse mode":
+                
                 for i in self.vector:
+                    sleep(0.3)
+                    self.multimeter.open_all_channels()
+                    sleep(0.3)
                     log.info("Close sourcemeter channel to probe")
                     match self.mode_source:
                         case "A->B":
@@ -174,16 +179,16 @@ class SolarisMesurement(Procedure):
                         case "C->D":
                             self.multimeter.close_rows_to_columns(int(self.switch_source_minus[4:5]), int(self.probe_3[4:5]))
                             self.multimeter.close_rows_to_columns(int(self.switch_source_plus[4:5]), int(self.probe_4[4:5]))
-                        case "A,B->C,D":
+                        case "A,C->B,D":
                             self.multimeter.close_rows_to_columns(int(self.switch_source_minus[4:5]), int(self.probe_1[4:5]))
                             self.multimeter.close_rows_to_columns(int(self.switch_source_plus[4:5]), int(self.probe_2[4:5]))
-                            self.multimeter.close_rows_to_columns(int(self.switch_source_minus[4:5]), int(self.probe_4[4:5]))
-                            self.multimeter.close_rows_to_columns(int(self.switch_source_plus[4:5]), int(self.probe_3[4:5]))
-                        case "A,D,->B,C":
-                            self.multimeter.close_rows_to_columns(int(self.switch_source_minus[4:5]), int(self.probe_1[4:5]))
+                            self.multimeter.close_rows_to_columns(int(self.switch_source_minus[4:5]), int(self.probe_3[4:5]))
                             self.multimeter.close_rows_to_columns(int(self.switch_source_plus[4:5]), int(self.probe_4[4:5]))
+                        case "C,B,->A,D":
                             self.multimeter.close_rows_to_columns(int(self.switch_source_minus[4:5]), int(self.probe_2[4:5]))
-                            self.multimeter.close_rows_to_columns(int(self.switch_source_plus[4:5]), int(self.probe_3[4:5]))
+                            self.multimeter.close_rows_to_columns(int(self.switch_source_plus[4:5]), int(self.probe_1[4:5]))
+                            self.multimeter.close_rows_to_columns(int(self.switch_source_minus[4:5]), int(self.probe_3[4:5]))
+                            self.multimeter.close_rows_to_columns(int(self.switch_source_plus[4:5]), int(self.probe_4[4:5]))
                     sleep(1)
 
         #Run pulses: 
@@ -191,12 +196,12 @@ class SolarisMesurement(Procedure):
                     if self.sourcemeter_device == "Keithley 2600":
                         self.keithley.ChB.pulse_script_v(0, i, self.pulse_time, self.pulse_delay, self.number_of_pulses, self.compliance )
                         self.keithley.opc()
-                        self.keithley.reset()
+                        self.keithley.beeper(0)
                     else: 
+                        #self.keithley.source_mode = 'VOLT'
                         self.keithley.source_voltage = i
-                        self.keithley.source_mode = 'VOLT'
                         self.keithley.compliance_current = self.compliance
-                        self.keithley.measure_current(self.nplc, 1.05e-2, True)
+                        self.keithley.measure_current(self.nplc, 1.05e-1, True)
                         for pulse_numbers in range(self.number_of_pulses):
                             self.keithley.pulse(self.pulse_time, self.pulse_delay)
                     
@@ -211,54 +216,66 @@ class SolarisMesurement(Procedure):
                     #self.multimeter.closed_channels("150")
                     log.info("Close channels to measure")
                     sleep(0.5)
-                    match self.mode_source:
-                        case "A->B":
-                            self.multimeter.close_rows_to_columns(int(self.switch_source_minus[4:5]), int(self.probe_1[4:5]))
-                            self.multimeter.close_rows_to_columns(int(self.switch_source_plus[4:5]), int(self.probe_2[4:5]))
-                        case "A->C":
-                            self.multimeter.close_rows_to_columns(int(self.switch_source_minus[4:5]), int(self.probe_1[4:5]))
-                            self.multimeter.close_rows_to_columns(int(self.switch_source_plus[4:5]), int(self.probe_3[4:5]))
-                        case "A->D":
-                            self.multimeter.close_rows_to_columns(int(self.switch_source_minus[4:5]), int(self.probe_1[4:5]))
-                            self.multimeter.close_rows_to_columns(int(self.switch_source_plus[4:5]), int(self.probe_4[4:5]))
-                        case "B->C":
-                            self.multimeter.close_rows_to_columns(int(self.switch_source_minus[4:5]), int(self.probe_2[4:5]))
-                            self.multimeter.close_rows_to_columns(int(self.switch_source_plus[4:5]), int(self.probe_3[4:5]))
-                        case "B->D":
-                            self.multimeter.close_rows_to_columns(int(self.switch_source_minus[4:5]), int(self.probe_2[4:5]))
-                            self.multimeter.close_rows_to_columns(int(self.switch_source_plus[4:5]), int(self.probe_4[4:5]))
-                        case "C->D":
-                            self.multimeter.close_rows_to_columns(int(self.switch_source_minus[4:5]), int(self.probe_3[4:5]))
-                            self.multimeter.close_rows_to_columns(int(self.switch_source_plus[4:5]), int(self.probe_4[4:5]))
-                        case "A,B->C,D":
-                            self.multimeter.close_rows_to_columns(int(self.switch_source_minus[4:5]), int(self.probe_1[4:5]))
-                            self.multimeter.close_rows_to_columns(int(self.switch_source_plus[4:5]), int(self.probe_2[4:5]))
-                            self.multimeter.close_rows_to_columns(int(self.switch_source_minus[4:5]), int(self.probe_4[4:5]))
-                            self.multimeter.close_rows_to_columns(int(self.switch_source_plus[4:5]), int(self.probe_3[4:5]))
-                        case "A,D,->B,C":
-                            self.multimeter.close_rows_to_columns(int(self.switch_source_minus[4:5]), int(self.probe_1[4:5]))
-                            self.multimeter.close_rows_to_columns(int(self.switch_source_plus[4:5]), int(self.probe_4[4:5]))
-                            self.multimeter.close_rows_to_columns(int(self.switch_source_minus[4:5]), int(self.probe_2[4:5]))
-                            self.multimeter.close_rows_to_columns(int(self.switch_source_plus[4:5]), int(self.probe_3[4:5]))
+
+                    if self.mode_source == "A,C->B,D" or self.source_mode == "C,B,->A,D":
+                        self.multimeter.close_rows_to_columns(int(self.switch_source_minus[4:5]), int(self.probe_1[4:5]))
+                        self.multimeter.close_rows_to_columns(int(self.switch_source_plus[4:5]), int(self.probe_2[4:5]))
+
+                    else:
+                        match self.mode_source:
+                            case "A->B":
+                                self.multimeter.close_rows_to_columns(int(self.switch_source_minus[4:5]), int(self.probe_1[4:5]))
+                                self.multimeter.close_rows_to_columns(int(self.switch_source_plus[4:5]), int(self.probe_2[4:5]))
+                            case "A->C":
+                                self.multimeter.close_rows_to_columns(int(self.switch_source_minus[4:5]), int(self.probe_1[4:5]))
+                                self.multimeter.close_rows_to_columns(int(self.switch_source_plus[4:5]), int(self.probe_3[4:5]))
+                            case "A->D":
+                                self.multimeter.close_rows_to_columns(int(self.switch_source_minus[4:5]), int(self.probe_1[4:5]))
+                                self.multimeter.close_rows_to_columns(int(self.switch_source_plus[4:5]), int(self.probe_4[4:5]))
+                            case "B->C":
+                                self.multimeter.close_rows_to_columns(int(self.switch_source_minus[4:5]), int(self.probe_2[4:5]))
+                                self.multimeter.close_rows_to_columns(int(self.switch_source_plus[4:5]), int(self.probe_3[4:5]))
+                            case "B->D":
+                                self.multimeter.close_rows_to_columns(int(self.switch_source_minus[4:5]), int(self.probe_2[4:5]))
+                                self.multimeter.close_rows_to_columns(int(self.switch_source_plus[4:5]), int(self.probe_4[4:5]))
+                            case "C->D":
+                                self.multimeter.close_rows_to_columns(int(self.switch_source_minus[4:5]), int(self.probe_3[4:5]))
+                                self.multimeter.close_rows_to_columns(int(self.switch_source_plus[4:5]), int(self.probe_4[4:5]))
+                            case "A,C->B,D":
+                                self.multimeter.close_rows_to_columns(int(self.switch_source_minus[4:5]), int(self.probe_1[4:5]))
+                                self.multimeter.close_rows_to_columns(int(self.switch_source_plus[4:5]), int(self.probe_2[4:5]))
+                                self.multimeter.close_rows_to_columns(int(self.switch_source_minus[4:5]), int(self.probe_3[4:5]))
+                                self.multimeter.close_rows_to_columns(int(self.switch_source_plus[4:5]), int(self.probe_4[4:5]))
+                            case "C,B,->A,D":
+                                self.multimeter.close_rows_to_columns(int(self.switch_source_minus[4:5]), int(self.probe_2[4:5]))
+                                self.multimeter.close_rows_to_columns(int(self.switch_source_plus[4:5]), int(self.probe_1[4:5]))
+                                self.multimeter.close_rows_to_columns(int(self.switch_source_minus[4:5]), int(self.probe_3[4:5]))
+                                self.multimeter.close_rows_to_columns(int(self.switch_source_plus[4:5]), int(self.probe_4[4:5]))
+                        sleep(1)
+                    
+                    if self.mode_source == "A,C->B,D" or self.source_mode == "C,B,->A,D":
+                        self.multimeter.close_rows_to_columns(1,int(self.probe_3[4:5]))
+                        self.multimeter.close_rows_to_columns(1,int(self.probe_4[4:5]))
+
+                    else:
+                        match self.mode_multimeter:
+                            case "A->C":
+                                self.multimeter.close_rows_to_columns(1,int(self.probe_1[4:5]))
+                                self.multimeter.close_rows_to_columns(1,int(self.probe_3[4:5]))
+                                
+                            case "B->D":
+                                self.multimeter.close_rows_to_columns(1,int(self.probe_2[4:5]))
+                                self.multimeter.close_rows_to_columns(1,int(self.probe_4[4:5]))
+                              
+                            case "A->B":
+                                self.multimeter.close_rows_to_columns(1,int(self.probe_1[4:5]))
+                                self.multimeter.close_rows_to_columns(1,int(self.probe_2[4:5]))
+                               
+                            case "C->D":
+                                self.multimeter.close_rows_to_columns(1,int(self.probe_3[4:5]))
+                                self.multimeter.close_rows_to_columns(1,int(self.probe_4[4:5]))
+                           
                     sleep(1)
-                    match self.mode_multimeter:
-                        case "A->C":
-                            self.multimeter.close_rows_to_columns(1,int(self.probe_1[4:5]))
-                            self.multimeter.close_rows_to_columns(1,int(self.probe_3[4:5]))
-                            
-                        case "B->D":
-                            self.multimeter.close_rows_to_columns(1,int(self.probe_2[4:5]))
-                            self.multimeter.close_rows_to_columns(1,int(self.probe_4[4:5]))
-                          
-                        case "A->B":
-                            self.multimeter.close_rows_to_columns(1,int(self.probe_1[4:5]))
-                            self.multimeter.close_rows_to_columns(1,int(self.probe_2[4:5]))
-                           
-                        case "C->D":
-                            self.multimeter.close_rows_to_columns(1,int(self.probe_3[4:5]))
-                            self.multimeter.close_rows_to_columns(1,int(self.probe_4[4:5]))
-                           
-                    sleep(0.5)
                     log.info("Measure resistance")
                     self.current_sense_list = []
                     if self.sourcemeter_device == "Keithley 2600":
@@ -289,10 +306,12 @@ class SolarisMesurement(Procedure):
                                     flag = True
                         self.current_sense = np.average(self.current_sense_list)
                         print(self.current_sense)
+                    
+                    ########Keithley 2400###############
                     else:  
-                        self.keithley.source_mode = 'VOLT'
+                        # self.keithley.source_mode = 'VOLT'
                         self.keithley.compliance_current = self.compliance
-                        self.keithley.measure_current(self.nplc, 1.05e-2, True)
+                        self.keithley.measure_current(self.nplc, 1.05e-1, True)
                         self.keithley.source_voltage = self.bias_voltage
                         sleep(0.3)
                         self.keithley.config_average(self.average)
@@ -315,6 +334,7 @@ class SolarisMesurement(Procedure):
                     else:
                         self.keithley.shutdown()
                         self.keithley.reset()
+                        self.keithley.beeper(0)
                     
                     self.multimeter.open_all_channels()
                 
@@ -427,7 +447,7 @@ class SolarisMesurement(Procedure):
                                     sleep(0.3)
                                     flag = True
                         self.current_sense = np.average(self.current_sense_list)
-                        print(self.current_sense)
+            
                     else:  
                         self.keithley.source_mode = 'VOLT'
                         self.keithley.compliance_current = self.compliance
@@ -447,13 +467,13 @@ class SolarisMesurement(Procedure):
                         self.current_sense = np.average(single_meas)
                         
                     self.voltage_sense = self.multimeter.read()
-                    print(self.current_sense)
+                
                     window.set_resistance(str(round(float(self.voltage_sense)/float(self.current_sense))))
                     data = {
                         'index': no_number,
                         'Resistance (ohm)': float(self.voltage_sense)/float(self.current_sense)
                         }
-                    #self.emit('results', data)
+                    self.emit('results', data)
                     
                     
                     licznik = licznik + 1
@@ -487,15 +507,12 @@ class SolarisMesurement(Procedure):
 class MainWindow(ManagedWindowBase):
 
     def __init__(self):
-        widget_list = (TableWidget("Experiment Table",
-                                     SolarisMesurement.DATA_COLUMNS,
-                                    by_column=True,
-                                    column_index=None
-                                    ),
+        widget_list = (
                         LogWidget("Experiment Log"),
                         PlotWidget("Graph",['Pulse Voltage (V)', 'Current (A)', 'Sense voltage (V)', 'Resistance (ohm)'] )
                         
                         )
+       
         super().__init__(
             procedure_class=SolarisMesurement,
             inputs=['mode','sample', 'resistance_value', 'keithley_address', 'multimeter_address', 'sourcemeter_device' , 'pulse_time', 'pulse_delay', 'number_of_pulses', 'average', 'bias_voltage', 'compliance', 'nplc', 'vector_param', 'probe_1', 'probe_2', 'probe_3', 'probe_4', 'switch_source_plus', 'switch_source_minus', 'mode_source', 'mode_multimeter'],
@@ -505,7 +522,7 @@ class MainWindow(ManagedWindowBase):
             inputs_in_scrollarea=True,
             widget_list=widget_list,
         )
-        logging.getLogger().addHandler(widget_list[1].handler)
+        logging.getLogger().addHandler(widget_list[0].handler)
         log.setLevel(self.log_level)
         log.info("ManagedWindow connected to logging")
         self.setWindowTitle('Solaris Measurement')
