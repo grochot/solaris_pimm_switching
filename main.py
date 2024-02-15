@@ -217,7 +217,7 @@ class SolarisMesurement(Procedure):
                     log.info("Close channels to measure")
                     sleep(0.5)
 
-                    if self.mode_source == "A,C->B,D" or self.source_mode == "C,B,->A,D":
+                    if self.mode_source == "A,C->B,D" or self.mode_source == "C,B,->A,D":
                         self.multimeter.close_rows_to_columns(int(self.switch_source_minus[4:5]), int(self.probe_1[4:5]))
                         self.multimeter.close_rows_to_columns(int(self.switch_source_plus[4:5]), int(self.probe_2[4:5]))
 
@@ -253,7 +253,7 @@ class SolarisMesurement(Procedure):
                                 self.multimeter.close_rows_to_columns(int(self.switch_source_plus[4:5]), int(self.probe_4[4:5]))
                         sleep(1)
                     
-                    if self.mode_source == "A,C->B,D" or self.source_mode == "C,B,->A,D":
+                    if self.mode_source == "A,C->B,D" or self.mode_source == "C,B,->A,D":
                         self.multimeter.close_rows_to_columns(1,int(self.probe_3[4:5]))
                         self.multimeter.close_rows_to_columns(1,int(self.probe_4[4:5]))
 
@@ -381,16 +381,11 @@ class SolarisMesurement(Procedure):
                     case "C->D":
                         self.multimeter.close_rows_to_columns(int(self.switch_source_minus[4:5]), int(self.probe_3[4:5]))
                         self.multimeter.close_rows_to_columns(int(self.switch_source_plus[4:5]), int(self.probe_4[4:5]))
-                    case "A,B->C,D":
+                    case _ :
                         self.multimeter.close_rows_to_columns(int(self.switch_source_minus[4:5]), int(self.probe_1[4:5]))
                         self.multimeter.close_rows_to_columns(int(self.switch_source_plus[4:5]), int(self.probe_2[4:5]))
-                        self.multimeter.close_rows_to_columns(int(self.switch_source_minus[4:5]), int(self.probe_4[4:5]))
-                        self.multimeter.close_rows_to_columns(int(self.switch_source_plus[4:5]), int(self.probe_3[4:5]))
-                    case "A,D,->B,C":
-                        self.multimeter.close_rows_to_columns(int(self.switch_source_minus[4:5]), int(self.probe_1[4:5]))
-                        self.multimeter.close_rows_to_columns(int(self.switch_source_plus[4:5]), int(self.probe_4[4:5]))
-                        self.multimeter.close_rows_to_columns(int(self.switch_source_minus[4:5]), int(self.probe_2[4:5]))
-                        self.multimeter.close_rows_to_columns(int(self.switch_source_plus[4:5]), int(self.probe_3[4:5]))
+                    
+
                 sleep(1)
                 match self.mode_multimeter:
                     case "A->C":
@@ -415,6 +410,9 @@ class SolarisMesurement(Procedure):
                     case "A->D":
                         self.multimeter.close_rows_to_columns(1,int(self.probe_1[4:5]))
                         self.multimeter.close_rows_to_columns(1,int(self.probe_4[4:5]))
+                    case _ : 
+                        self.multimeter.close_rows_to_columns(1,int(self.probe_1[4:5]))
+                        self.multimeter.close_rows_to_columns(1,int(self.probe_2[4:5]))
                 no_number = 0
                 log.info("Measure resistance")
                 while True:

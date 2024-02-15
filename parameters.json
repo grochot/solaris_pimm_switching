@@ -1,5 +1,5 @@
 {
-    "mode": "Sourcemeter pulse mode",
+    "mode": "Multimeter Mode",
     "sample": "MgO001_Pt_NiO_L12test",
     "keithley_address": "GPIB0::24::INSTR",
     "multimeter_address": "GPIB0::18::INSTR",
@@ -18,6 +18,6 @@
     "probe_4": "Col 8",
     "switch_source_plus": "Row 5",
     "switch_source_minus": "Row 4",
-    "mode_source": "A->B",
+    "mode_source": "C,B,->A,D",
     "mode_multimeter": "C->D"
 }

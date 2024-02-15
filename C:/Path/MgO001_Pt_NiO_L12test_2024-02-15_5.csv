@@ -1,0 +1,43 @@
+#Procedure: <__main__.SolarisMesurement>
+#Parameters:
+#	Average: 10
+#	Bias voltage: 0.1 V
+#	Compliance: 1
+#	Keithley address: GPIB0::24::INSTR
+#	Experiment Mode: Sourcemeter pulse mode
+#	Mode multimeter: C->D
+#	Mode source: C,B,->A,D
+#	Multimeter address: GPIB0::18::INSTR
+#	NPLC: 1
+#	Number of pulses: 5
+#	A: Col 1
+#	B: Col 6
+#	C: Col 3
+#	D: Col 8
+#	Pulse delay: 0.2 s
+#	Pulse time: 0.1 s
+#	Resistance Value: 
+#	Sample: MgO001_Pt_NiO_L12test
+#	Sourcemeter device: Keithley 2400
+#	Switch source -: Row 4
+#	Switch source +: Row 5
+#	Pulse amplitude vector [start, step, stop]: 0,8,9,15,-9,3,0
+#Data:
+index,Pulse Voltage (V),Current (A),Sense voltage (V),Resistance (ohm)
+nan,0.0,1.0,1.0,1.0
+nan,1.2857142857142858,1.0,1.0,1.0
+nan,2.5714285714285716,1.0,1.0,1.0
+nan,3.8571428571428577,1.0,1.0,1.0
+nan,5.142857142857143,1.0,1.0,1.0
+nan,6.428571428571429,1.0,1.0,1.0
+nan,7.714285714285715,1.0,1.0,1.0
+nan,9.0,1.0,1.0,1.0
+nan,7.8,1.0,1.0,1.0
+nan,6.6,1.0,1.0,1.0
+nan,5.4,1.0,1.0,1.0
+nan,4.2,1.0,1.0,1.0
+nan,3.0,1.0,1.0,1.0
+nan,1.8000000000000007,1.0,1.0,1.0
+nan,0.5999999999999996,1.0,1.0,1.0
+nan,-0.5999999999999996,1.0,1.0,1.0
+nan,-1.799999999999999,1.0,1.0,1.0

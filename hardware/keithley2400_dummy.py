@@ -58,3 +58,7 @@ class Keithley2400Dummy():
         pass
     def reset(self):
         pass
+    def beeper(self, state):
+        pass
+
+
