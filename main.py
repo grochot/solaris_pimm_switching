@@ -188,7 +188,7 @@ class SolarisMesurement(Procedure):
                             self.multimeter.close_rows_to_columns(int(self.switch_source_plus[4:5]), int(self.probe_4[4:5]))
                             self.multimeter.close_rows_to_columns(int(self.switch_source_minus[4:5]), int(self.probe_2[4:5]))
                             self.multimeter.close_rows_to_columns(int(self.switch_source_plus[4:5]), int(self.probe_3[4:5]))
-                    sleep(100)
+                    sleep(1)
 
         #Run pulses: 
                     log.info("Run voltage pulses")
@@ -262,7 +262,7 @@ class SolarisMesurement(Procedure):
                             self.multimeter.close_rows_to_columns(1,int(self.probe_3[4:5]))
                             self.multimeter.close_rows_to_columns(1,int(self.probe_4[4:5]))
                            
-                    sleep(10)
+                    sleep(1)
                     log.info("Measure resistance")
                     self.current_sense_list = []
                     if self.sourcemeter_device == "Keithley 2600":
