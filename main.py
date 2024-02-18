@@ -80,7 +80,6 @@ class SolarisMesurement(Procedure):
                     self.keithley.ChB.compliance_current = self.compliance
                     self.keithley.ChB.measure_nplc = self.nplc
                 except Exception as e:
-                    print(e)
                     self.keithley = Keithley2600Dummy()
                     log.warning("Could not connect to the sourcemeter. Use dummy.")
             else: 
@@ -91,7 +90,6 @@ class SolarisMesurement(Procedure):
                     self.keithley.measure_current(self.nplc, 1.05e-1, True)
                     self.keithley.beeper(0)
                 except Exception as e:
-                    print(e)
                     self.keithley = Keithley2400Dummy(self.keithley_address)
                     log.warning("Could not connect to the sourcemeter. Use dummy.")
 
@@ -131,7 +129,6 @@ class SolarisMesurement(Procedure):
                     self.keithley.ChB.measure_nplc = self.nplc
                     log.info("Sourcemeter connected")
                 except Exception as e:
-                    print(e)
                     self.keithley = Keithley2600Dummy(self.keithley_address)
                     log.warning("Could not connect to the sourcemeter. Use dummy.")
             else: 
@@ -142,7 +139,6 @@ class SolarisMesurement(Procedure):
                     self.keithley.measure_current(self.nplc, 1.05e-2, True)
                     log.info("Sourcemeter connected")
                 except Exception as e:
-                    print(e)
                     self.keithley = Keithley2400Dummy(self.keithley_address)
                     log.warning("Could not connect to the sourcemeter. Use dummy.")
                     
@@ -155,7 +151,12 @@ class SolarisMesurement(Procedure):
         match self.mode:
             case "Sourcemeter pulse mode":
                 
+                
                 for i in self.vector:
+                    self.keithley.source_mode = 'VOLT'
+                    self.keithley.compliance_current = self.compliance
+                    self.keithley.measure_current(self.nplc, 1.05e-1, True)
+                    self.keithley.beeper(0)
                     sleep(0.3)
                     self.multimeter.open_all_channels()
                     sleep(0.3)
@@ -198,18 +199,13 @@ class SolarisMesurement(Procedure):
                         self.keithley.opc()
                         self.keithley.beeper(0)
                     else: 
-                        #self.keithley.source_mode = 'VOLT'
+                        self.keithley.source_mode = 'VOLT'
                         self.keithley.compliance_current = self.compliance
-                        self.keithley.measure_current(self.nplc, 1.05e-1, True)
                         self.keithley.source_voltage = i
                         sleep(0.3)
-                        self.keithley.config_average(self.average)
-                        self.keithley.filter_type = "REP"
-                        self.keithley.filter_count = self.average
-                        self.keithley.measure_concurent_functions = True
                         for pulse_numbers in range(self.number_of_pulses):
-                            self.keithley.pulse(self.pulse_time, self.pulse_delay)
-                            print(self.keithley.current)
+                            i/self.keithley.pulse(self.pulse_time, self.pulse_delay)
+                            
                     
 
                     log.info("End of pulses")
@@ -306,12 +302,10 @@ class SolarisMesurement(Procedure):
                                     self.keithley.opc()
                                     sleep(0.1)
                                     flag = False
-                                    print('iteration' + str(iter))
                                 except:
                                     sleep(0.3)
                                     flag = True
                         self.current_sense = np.average(self.current_sense_list)
-                        print(self.current_sense)
                     
                     ########Keithley 2400###############
                     else:  
@@ -330,7 +324,6 @@ class SolarisMesurement(Procedure):
                         single_meas = self.keithley.current
             
                         self.current_sense = np.average(single_meas)
-                        print(self.current_sense)
                         
                     sleep(0.3)
                     self.voltage_sense = self.multimeter.read()
@@ -446,8 +439,6 @@ class SolarisMesurement(Procedure):
                                     self.keithley.opc()
                                     sleep(0.1)
                                     flag = False
-                                    print('iteration' + str(iter))
-                                except:
                                     sleep(0.3)
                                     flag = True
                         self.current_sense = np.average(self.current_sense_list)

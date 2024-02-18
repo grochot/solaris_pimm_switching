@@ -166,8 +166,10 @@ class Keithley2400(Instrument):
     def pulse(self,length, delay):
         self.enable_source()
         time.sleep(length)
+        value = self.current
         self.shutdown()
         time.sleep(delay)
+        return value
 
     def opc(self): 
         kk = self.ask("*OPC?")
