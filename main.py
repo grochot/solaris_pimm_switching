@@ -199,9 +199,14 @@ class SolarisMesurement(Procedure):
                         self.keithley.beeper(0)
                     else: 
                         #self.keithley.source_mode = 'VOLT'
-                        self.keithley.source_voltage = i
                         self.keithley.compliance_current = self.compliance
                         self.keithley.measure_current(self.nplc, 1.05e-1, True)
+                        self.keithley.source_voltage = self.bias_voltage
+                        sleep(0.3)
+                        self.keithley.config_average(self.average)
+                        self.keithley.filter_type = "REP"
+                        self.keithley.filter_count = self.average
+                        self.keithley.measure_concurent_functions = True
                         for pulse_numbers in range(self.number_of_pulses):
                             self.keithley.pulse(self.pulse_time, self.pulse_delay)
                     
