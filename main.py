@@ -63,6 +63,7 @@ class SolarisMesurement(Procedure):
     DATA_COLUMNS = ['index', 'Pulse Voltage (V)', 'Current (A)', 'Sense voltage (V)', 'Resistance (ohm)']
 
     def startup(self):
+        log.setLevel(0)
         mul_add = self.multimeter_address
         for i in self.used_parameters_list:
             self.param = eval("self."+i)
@@ -204,7 +205,7 @@ class SolarisMesurement(Procedure):
                         self.keithley.source_voltage = i
                         sleep(0.3)
                         for pulse_numbers in range(self.number_of_pulses):
-                            i/self.keithley.pulse(self.pulse_time, self.pulse_delay)
+                            log.info("Pulse resistance: {} Ohms".format(i/self.keithley.pulse(self.pulse_time, self.pulse_delay)))
                             
                     
 
@@ -439,6 +440,7 @@ class SolarisMesurement(Procedure):
                                     self.keithley.opc()
                                     sleep(0.1)
                                     flag = False
+                                except:
                                     sleep(0.3)
                                     flag = True
                         self.current_sense = np.average(self.current_sense_list)
