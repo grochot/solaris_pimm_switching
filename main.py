@@ -520,7 +520,7 @@ class MainWindow(ManagedWindowBase):
         logging.getLogger().addHandler(widget_list[0].handler)
         log.setLevel(self.log_level)
         log.info("ManagedWindow connected to logging")
-        self.setWindowTitle('Solaris Measurement')
+        self.setWindowTitle('Solaris Measurement v.1.0.0')
         self.directory = r'C:/Path/'
 
     def set_resistance(self,value): 
