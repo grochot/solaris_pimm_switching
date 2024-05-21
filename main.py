@@ -151,13 +151,11 @@ class SolarisMesurement(Procedure):
         licznik = 0
         match self.mode:
             case "Sourcemeter pulse mode":
-                
-                
                 for i in self.vector:
                     self.keithley.source_mode = 'VOLT'
                     self.keithley.compliance_current = self.compliance
-                    self.keithley.measure_current(self.nplc, 1.05e-1, True)
-                    self.keithley.beeper(0)
+                    self.keithley.ChB.measure_current(self.nplc, 1.05e-1, True)
+                    # self.keithley.beeper(0)
                     sleep(0.3)
                     self.multimeter.open_all_channels()
                     sleep(0.3)
@@ -216,7 +214,7 @@ class SolarisMesurement(Procedure):
         # Measure procedure:
                     self.multimeter.open_all_channels()
                     self.multimeter.closed_channels("150")
-                    #self.multimeter.closed_channels("150")
+                    self.multimeter.closed_channels("149")
                     log.info("Close channels to measure")
                     sleep(0.5)
 
@@ -341,7 +339,7 @@ class SolarisMesurement(Procedure):
 
             
                     data = {
-                        'index': np.nan,
+                        'index': licznik,
                         'Pulse Voltage (V)': float(i),
                         'Current (A)': float(self.current_sense),
                         'Sense voltage (V)': float(self.voltage_sense),
@@ -506,7 +504,7 @@ class MainWindow(ManagedWindowBase):
     def __init__(self):
         widget_list = (
                         LogWidget("Experiment Log"),
-                        PlotWidget("Graph",['Pulse Voltage (V)', 'Current (A)', 'Sense voltage (V)', 'Resistance (ohm)'] )
+                        PlotWidget("Graph",['index','Pulse Voltage (V)', 'Current (A)', 'Sense voltage (V)', 'Resistance (ohm)'] )
                         
                         )
        
