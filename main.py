@@ -214,7 +214,7 @@ class SolarisMesurement(Procedure):
         # Measure procedure:
                     self.multimeter.open_all_channels()
                     self.multimeter.closed_channels("150")
-                    self.multimeter.closed_channels("149")
+                    # self.multimeter.closed_channels("149")
                     log.info("Close channels to measure")
                     sleep(0.5)
 
@@ -413,60 +413,88 @@ class SolarisMesurement(Procedure):
                         self.multimeter.close_rows_to_columns(1,int(self.probe_2[4:5]))
                 no_number = 0
                 log.info("Measure resistance")
+                self.keithley.ChB.source_voltage = self.bias_voltage
+                self.keithley.ChB.compliance_current = self.compliance 
+                self.keithley.ChB.current_range =self.compliance
+
+                self.keithley.ChB.measure_nplc = self.nplc
+        
+                self.keithley.ChB.source_output = 'ON'
                 while True:
                     no_number = no_number + 1
                     self.current_sense_list = []
-                    if self.sourcemeter_device == "Keithley 2600":
-                        self.keithley.ChB.source_mode = "voltage"
-                        self.keithley.ChB.auto_range_source('voltage')
-                        self.keithley.ChB.source_voltage = self.bias_voltage
-                        self.keithley.ChB.compliance_current = self.compliance 
-                        self.keithley.ChB.current_range =self.compliance
-
-                        self.keithley.ChB.measure_nplc = self.nplc
-                
-                        self.keithley.ChB.source_output = 'ON'
-                        sleep(0.4)
-                        self.keithley.opc()
-
-                       
-                        for iter in range(self.average):
-                            flag = True
-                            while flag:
-                                try:
-                                    self.current_sense_list.append(self.keithley.ChB.read_current())
-                                    self.keithley.opc()
-                                    sleep(0.1)
-                                    flag = False
-                                except:
-                                    sleep(0.3)
-                                    flag = True
-                        self.current_sense = np.average(self.current_sense_list)
-            
-                    else:  
-                        self.keithley.source_mode = 'VOLT'
-                        self.keithley.compliance_current = self.compliance
-                        self.keithley.measure_current(self.nplc, 1.05e-2, True)
-                        self.keithley.source_voltage = self.bias_voltage
-                      
-                        self.keithley.config_average(self.average)
-                        self.keithley.filter_type = "REP"
-                        self.keithley.filter_count = self.average
-                        self.keithley.measure_concurent_functions = True
-                        self.keithley.enable_source()
-                        sleep(0.3)
                     
-                        single_meas = self.keithley.current
-                        self.keithley.opc()
-            
-                        self.current_sense = np.average(single_meas)
+                    if self.mode_multimeter == self.mode_source: 
+                        for iter in range(self.average):
+                                flag = True
+                                while flag:
+                                    try:
+                                        self.current_sense_list.append(self.keithley.ChB.read_current())
+                                        self.keithley.opc()
+                                        sleep(0.1)
+                                        flag = False
+                                    except:
+                                        sleep(0.3)
+                                        flag = True
+                        self.current_sense = np.average(self.current_sense_list)
+                        self.voltage_sense = self.bias_voltage
+                        window.set_resistance(str(round(float(self.voltage_sense)/float(self.current_sense))))
+
+
+                    
+                    else:
+                        if self.sourcemeter_device == "Keithley 2600":
+                            self.keithley.ChB.source_mode = "voltage"
+                            self.keithley.ChB.auto_range_source('voltage')
+                            self.keithley.ChB.source_voltage = self.bias_voltage
+                            self.keithley.ChB.compliance_current = self.compliance 
+                            self.keithley.ChB.current_range =self.compliance
+
+                            self.keithley.ChB.measure_nplc = self.nplc
+                    
+                            self.keithley.ChB.source_output = 'ON'
+                            sleep(0.4)
+                            self.keithley.opc()
+
                         
-                    self.voltage_sense = self.multimeter.read()
+                            for iter in range(self.average):
+                                flag = True
+                                while flag:
+                                    try:
+                                        self.current_sense_list.append(self.keithley.ChB.read_current())
+                                        self.keithley.opc()
+                                        sleep(0.1)
+                                        flag = False
+                                    except:
+                                        sleep(0.3)
+                                        flag = True
+                            self.current_sense = np.average(self.current_sense_list)
+                        else:  
+                            self.keithley.source_mode = 'VOLT'
+                            self.keithley.compliance_current = self.compliance
+                            self.keithley.measure_current(self.nplc, 1.05e-2, True)
+                            self.keithley.source_voltage = self.bias_voltage
+                        
+                            self.keithley.config_average(self.average)
+                            self.keithley.filter_type = "REP"
+                            self.keithley.filter_count = self.average
+                            self.keithley.measure_concurent_functions = True
+                            self.keithley.enable_source()
+                            sleep(0.3)
+                        
+                            single_meas = self.keithley.current
+                            self.keithley.opc()
                 
-                    window.set_resistance(str(round(float(self.voltage_sense)/float(self.current_sense))))
+                            self.current_sense = np.average(single_meas)
+                        # sense multimeter voltage    
+                        self.voltage_sense = self.multimeter.read()
+
+                        window.set_resistance(str(round(float(self.voltage_sense)/float(self.current_sense))))
                     data = {
                         'index': no_number,
-                        'Resistance (ohm)': float(self.voltage_sense)/float(self.current_sense)
+                        'Resistance (ohm)': float(self.voltage_sense)/float(self.current_sense),
+                        'Current (A)': self.current_sense,
+                        'Sense voltage (V)': self.voltage_sense
                         }
                     self.emit('results', data)
                     
