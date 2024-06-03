@@ -154,8 +154,8 @@ class SolarisMesurement(Procedure):
                 for i in self.vector:
                     self.keithley.source_mode = 'VOLT'
                     self.keithley.compliance_current = self.compliance
-                    self.keithley.ChB.measure_current(self.nplc, 1.05e-1, True)
-                    # self.keithley.beeper(0)
+                    self.keithley.measure_current(self.nplc, 1.05e-1, True)
+                    self.keithley.beeper(0)
                     sleep(0.3)
                     self.multimeter.open_all_channels()
                     sleep(0.3)
