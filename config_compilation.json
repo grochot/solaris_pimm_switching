@@ -11,7 +11,7 @@
   },
   {
    "optionDest": "onefile",
-   "value": true
+   "value": false
   },
   {
    "optionDest": "console",
@@ -50,16 +50,16 @@
    "value": false
   },
   {
-   "optionDest": "datas",
-   "value": "C:/Users/IE/git/solaris_pimm_switching/parameters.json;."
-  },
-  {
    "optionDest": "pathex",
    "value": "C:/Users/IE/git/solaris_pimm_switching/.env/Lib/site-packages"
   },
   {
    "optionDest": "pathex",
    "value": "C:/Users/IE/git/solaris_pimm_switching"
+  },
+  {
+   "optionDest": "datas",
+   "value": "C:/Users/IE/git/solaris_pimm_switching/logic;logic/"
   }
  ],
  "nonPyinstallerOptions": {
