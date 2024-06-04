@@ -1,5 +1,5 @@
 {
-    "mode": "Sourcemeter pulse mode",
+    "mode": "Multimeter Mode",
     "sample": "MgO001_Pt_NiO_R5_45deg01CD",
     "keithley_address": "GPIB0::24::INSTR",
     "multimeter_address": "GPIB0::18::INSTR",
@@ -11,13 +11,13 @@
     "bias_voltage": 0.1,
     "compliance": 0.1,
     "nplc": 1.0,
-    "vector_param": "0,10,0,3,5,7,12,10,12,4,0,10,0,3,-5,7,-12,10,-12,4,0,10,0",
+    "vector_param": "0.1,2,0.1",
     "probe_1": "Col 1",
     "probe_2": "Col 6",
     "probe_3": "Col 3",
     "probe_4": "Col 8",
     "switch_source_plus": "Row 5",
     "switch_source_minus": "Row 4",
-    "mode_source": "C->D",
-    "mode_multimeter": "A->B"
+    "mode_source": "A,C->B,D",
+    "mode_multimeter": "A->D"
 }

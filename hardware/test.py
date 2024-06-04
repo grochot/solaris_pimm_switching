@@ -7,7 +7,7 @@ print(rm.list_resources())
 
 m = Keithley2700('GPIB0::18::INSTR')
 
-# k = Keithley2600('GPIB0::26::INSTR')
+print(m.get_state_of_channels(108))
 
 #k.ChB.reset_smu()
 #k.ChB.reset_buffer()

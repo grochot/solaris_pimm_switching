@@ -14,7 +14,7 @@ from pymeasure.display.widgets import TableWidget, LogWidget, PlotWidget
 from pymeasure.display.windows.managed_dock_window import ManagedDockWindow
 from pymeasure.experiment import Procedure, Results, procedure
 from pymeasure.experiment import IntegerParameter, FloatParameter, Parameter, ListParameter, BooleanParameter, unique_filename
-from hardware.keithley2636 import Keithley2600
+from hardware.keithley_2636 import Keithley2636
 from hardware.keithley2636_dummy import Keithley2600Dummy
 from hardware.keithley2700 import Keithley2700
 from hardware.keithley2700_dummy import Keithley2700Dummy
@@ -54,7 +54,7 @@ class SolarisMesurement(Procedure):
     probe_1 = ListParameter("A", choices=["Col 1", "Col 2", "Col 3", "Col 4", "Col 5", "Col 6", "Col 7", "Col 8"], default = parameters_from_file["probe_1"])
     probe_2 = ListParameter("B", choices=["Col 1", "Col 2", "Col 3", "Col 4", "Col 5", "Col 6", "Col 7", "Col 8"], default = parameters_from_file["probe_2"])
     probe_3 = ListParameter("C", choices=["Col 1", "Col 2", "Col 3", "Col 4", "Col 5", "Col 6", "Col 7", "Col 8"], default = parameters_from_file["probe_3"])
-    probe_4 = ListParameter("D", choices=[ "Col 1", "Col 2", "Col 3", "Col 4", "Col 5", "Col 6", "Col 7", "Col 8"], default = parameters_from_file["probe_4"])
+    probe_4 = ListParameter("D", choices=["Col 1", "Col 2", "Col 3", "Col 4", "Col 5", "Col 6", "Col 7", "Col 8"], default = parameters_from_file["probe_4"])
     switch_source_plus= ListParameter("Switch source +", choices=["Row 1", "Row 2", "Row 3", "Row 4", "Row 5", "Row 6"], default = parameters_from_file["switch_source_plus"])
     switch_source_minus= ListParameter("Switch source -", choices=["Row 1", "Row 2", "Row 3", "Row 4", "Row 5", "Row 6"], default = parameters_from_file["switch_source_minus"])
     mode_source = ListParameter("Mode source", choices=["A->B", "A->C", "A->D", "B->C", "B->D", "C->D", "A,C->B,D", "C,B,->A,D"], default = parameters_from_file["mode_source"])
@@ -76,10 +76,15 @@ class SolarisMesurement(Procedure):
             #Prepare keithley 
             if self.sourcemeter_device == "Keithley 2600":
                 try:
-                    self.keithley = Keithley2600(self.keithley_address, timeout= 50000)
-                    #self.keithley.ChA.single_pulse_prepare(self.pulse_voltage, self.pulse_time, self.pulse_range)
-                    self.keithley.ChB.compliance_current = self.compliance
-                    self.keithley.ChB.measure_nplc = self.nplc
+                    self.keithley = Keithley2636(self.keithley_address, timeout= 50000).ChB
+                    self.keithley.single_pulse_prepare()
+                    self.keithley.source_mode = 'VOLT'
+                    self.keithley.current_range = 0.1
+                    self.keithley.compliance_current = self.compliance
+                    self.keithley.source_voltage = self.bias_voltage
+                    self.keithley.enable_source()
+                    self.keithley.measure_current(self.nplc, 0.1)
+
                 except Exception as e:
                     self.keithley = Keithley2600Dummy()
                     log.warning("Could not connect to the sourcemeter. Use dummy.")
@@ -124,10 +129,13 @@ class SolarisMesurement(Procedure):
                 #Prepare keithley 
             if self.sourcemeter_device == "Keithley 2600":
                 try:
-                    self.keithley = Keithley2600(self.keithley_address, timeout= 50000)
-                    #self.keithley.ChA.single_pulse_prepare(self.pulse_voltage, self.pulse_time, self.pulse_range)
-                    self.keithley.ChB.compliance_current = self.compliance
-                    self.keithley.ChB.measure_nplc = self.nplc
+                    self.keithley = Keithley2636(self.keithley_address, timeout= 50000).ChB
+                    self.keithley.source_mode = 'VOLT'
+                    self.keithley.current_range = 0.1
+                    self.keithley.compliance_current = self.compliance
+                    self.keithley.source_voltage = self.bias_voltage
+                    self.keithley.enable_source()
+                    self.keithley.measure_current(self.nplc, 0.1)
                     log.info("Sourcemeter connected")
                 except Exception as e:
                     self.keithley = Keithley2600Dummy(self.keithley_address)
@@ -152,10 +160,17 @@ class SolarisMesurement(Procedure):
         match self.mode:
             case "Sourcemeter pulse mode":
                 for i in self.vector:
-                    self.keithley.source_mode = 'VOLT'
-                    self.keithley.compliance_current = self.compliance
-                    self.keithley.measure_current(self.nplc, 1.05e-1, True)
-                    self.keithley.beeper(0)
+                    if self.sourcemeter_device != "Keithley 2600":
+                        self.keithley.source_mode = 'VOLT'
+                        self.keithley.compliance_current = self.compliance
+                        self.keithley.measure_current(self.nplc, 1.05e-1, True)
+                        self.keithley.beeper(0)
+                    else: 
+                        self.keithley.duration=self.pulse_time
+                        self.keithley.source_range=("VOLT", 10)
+                        self.keithley.offset=("VOLT",0)
+                        self.keithley.compliance_current=self.compliance
+                    
                     sleep(0.3)
                     self.multimeter.open_all_channels()
                     sleep(0.3)
@@ -190,13 +205,15 @@ class SolarisMesurement(Procedure):
                             self.multimeter.close_rows_to_columns(int(self.switch_source_minus[4:5]), int(self.probe_3[4:5]))
                             self.multimeter.close_rows_to_columns(int(self.switch_source_plus[4:5]), int(self.probe_4[4:5]))
                     sleep(1)
+                    log.info(self.multimeter.closed_channels_get())
 
         #Run pulses: 
                     log.info("Run voltage pulses")
                     if self.sourcemeter_device == "Keithley 2600":
-                        self.keithley.ChB.pulse_script_v(0, i, self.pulse_time, self.pulse_delay, self.number_of_pulses, self.compliance )
-                        self.keithley.opc()
-                        self.keithley.beeper(0)
+                        self.keithley.amplitude=("VOLT",i)
+                        self.keithley.enable_source()
+                        self.keithley.init()
+                        self.keithley.trigger()
                     else: 
                         self.keithley.source_mode = 'VOLT'
                         self.keithley.compliance_current = self.compliance
@@ -208,6 +225,9 @@ class SolarisMesurement(Procedure):
                     
 
                     log.info("End of pulses")
+                    if self.sourcemeter_device == "Keithley 2600": 
+                        self.keithley.disable_source()
+                        self.keithley.enable_source()
                     sleep(0.5)
 
 
@@ -219,9 +239,40 @@ class SolarisMesurement(Procedure):
                     sleep(0.5)
 
                     if self.mode_source == "A,C->B,D" or self.mode_source == "C,B,->A,D":
-                        self.multimeter.close_rows_to_columns(int(self.switch_source_minus[4:5]), int(self.probe_1[4:5]))
-                        self.multimeter.close_rows_to_columns(int(self.switch_source_plus[4:5]), int(self.probe_2[4:5]))
-
+                        match self.mode_multimeter:
+                            case "A->C":
+                                self.multimeter.close_rows_to_columns(1,int(self.probe_1[4:5]))
+                                self.multimeter.close_rows_to_columns(1,int(self.probe_3[4:5]))
+                                self.multimeter.close_rows_to_columns(int(self.switch_source_minus[4:5]), int(self.probe_2[4:5]))
+                                self.multimeter.close_rows_to_columns(int(self.switch_source_plus[4:5]), int(self.probe_4[4:5]))
+                                
+                            case "B->D":
+                                self.multimeter.close_rows_to_columns(1,int(self.probe_2[4:5]))
+                                self.multimeter.close_rows_to_columns(1,int(self.probe_4[4:5]))
+                                self.multimeter.close_rows_to_columns(int(self.switch_source_minus[4:5]), int(self.probe_1[4:5]))
+                                self.multimeter.close_rows_to_columns(int(self.switch_source_plus[4:5]), int(self.probe_3[4:5]))
+                              
+                            case "A->B":
+                                self.multimeter.close_rows_to_columns(1,int(self.probe_1[4:5]))
+                                self.multimeter.close_rows_to_columns(1,int(self.probe_2[4:5]))
+                                self.multimeter.close_rows_to_columns(int(self.switch_source_minus[4:5]), int(self.probe_3[4:5]))
+                                self.multimeter.close_rows_to_columns(int(self.switch_source_plus[4:5]), int(self.probe_4[4:5]))
+                               
+                            case "C->D":
+                                self.multimeter.close_rows_to_columns(1,int(self.probe_3[4:5]))
+                                self.multimeter.close_rows_to_columns(1,int(self.probe_4[4:5]))
+                                self.multimeter.close_rows_to_columns(int(self.switch_source_minus[4:5]), int(self.probe_1[4:5]))
+                                self.multimeter.close_rows_to_columns(int(self.switch_source_plus[4:5]), int(self.probe_2[4:5]))
+                            case "C->B": 
+                                self.multimeter.close_rows_to_columns(1,int(self.probe_2[4:5]))
+                                self.multimeter.close_rows_to_columns(1,int(self.probe_3[4:5]))
+                                self.multimeter.close_rows_to_columns(int(self.switch_source_minus[4:5]), int(self.probe_1[4:5]))
+                                self.multimeter.close_rows_to_columns(int(self.switch_source_plus[4:5]), int(self.probe_4[4:5]))
+                            case "A->D": 
+                                self.multimeter.close_rows_to_columns(1,int(self.probe_1[4:5]))
+                                self.multimeter.close_rows_to_columns(1,int(self.probe_4[4:5]))
+                                self.multimeter.close_rows_to_columns(int(self.switch_source_minus[4:5]), int(self.probe_2[4:5]))
+                                self.multimeter.close_rows_to_columns(int(self.switch_source_plus[4:5]), int(self.probe_3[4:5]))
                     else:
                         match self.mode_source:
                             case "A->B":
@@ -254,11 +305,7 @@ class SolarisMesurement(Procedure):
                                 self.multimeter.close_rows_to_columns(int(self.switch_source_plus[4:5]), int(self.probe_4[4:5]))
                         sleep(1)
                     
-                    if self.mode_source == "A,C->B,D" or self.mode_source == "C,B,->A,D":
-                        self.multimeter.close_rows_to_columns(1,int(self.probe_3[4:5]))
-                        self.multimeter.close_rows_to_columns(1,int(self.probe_4[4:5]))
-
-                    else:
+                    if self.mode_source != "A,C->B,D" or self.mode_source != "C,B,->A,D":
                         match self.mode_multimeter:
                             case "A->C":
                                 self.multimeter.close_rows_to_columns(1,int(self.probe_1[4:5]))
@@ -275,30 +322,25 @@ class SolarisMesurement(Procedure):
                             case "C->D":
                                 self.multimeter.close_rows_to_columns(1,int(self.probe_3[4:5]))
                                 self.multimeter.close_rows_to_columns(1,int(self.probe_4[4:5]))
+                            case "C->B": 
+                                self.multimeter.close_rows_to_columns(1,int(self.probe_2[4:5]))
+                                self.multimeter.close_rows_to_columns(1,int(self.probe_3[4:5]))
+                               
+                            case "A->D": 
+                                self.multimeter.close_rows_to_columns(1,int(self.probe_1[4:5]))
+                                self.multimeter.close_rows_to_columns(1,int(self.probe_4[4:5]))
+                              
                            
                     sleep(1)
+                    log.info(self.multimeter.closed_channels_get())
                     log.info("Measure resistance")
                     self.current_sense_list = []
                     if self.sourcemeter_device == "Keithley 2600":
-                        self.keithley.ChB.source_mode = "voltage"
-                        self.keithley.ChB.auto_range_source('voltage')
-                        self.keithley.ChB.source_voltage = self.bias_voltage
-                        self.keithley.ChB.compliance_current = self.compliance 
-                        self.keithley.ChB.current_range =self.compliance
-
-                        self.keithley.ChB.measure_nplc = self.nplc
-                
-                        self.keithley.ChB.source_output = 'ON'
-                        sleep(0.4)
-                        self.keithley.opc()
-
-                        
                         for iter in range(self.average):
                             flag = True
                             while flag:
                                 try:
-                                    self.current_sense_list.append(self.keithley.ChB.read_current())
-                                    self.keithley.opc()
+                                    self.current_sense_list.append(self.keithley.current)
                                     sleep(0.1)
                                     flag = False
                                 except:
@@ -327,8 +369,10 @@ class SolarisMesurement(Procedure):
                     sleep(0.3)
                     self.voltage_sense = self.multimeter.read()
                     sleep(0.3)
+                    
+                    
                     if self.sourcemeter_device == "Keithley 2600":
-                        self.keithley.ChB.shutdown()
+                        self.keithley.disable_source()
                     else:
                         self.keithley.shutdown()
                         self.keithley.reset()
@@ -420,49 +464,66 @@ class SolarisMesurement(Procedure):
                     self.current_sense_list = []
                     
                     if self.mode_multimeter == self.mode_source:
-                        self.keithley.source_mode = 'VOLT'
-                        self.keithley.compliance_current = self.compliance
-                        self.keithley.measure_current(self.nplc, 1.05e-2, True)
-                        self.keithley.source_voltage = self.bias_voltage
-                    
-                        self.keithley.config_average(self.average)
-                        self.keithley.filter_type = "REP"
-                        self.keithley.filter_count = self.average
-                        self.keithley.measure_concurent_functions = True
-                        self.keithley.enable_source()
-                        sleep(0.3)
-                    
-                        single_meas = self.keithley.current
-                        self.keithley.opc()
-            
-                        self.current_sense = np.average(single_meas)
-                       
+                        if self.sourcemeter_device != "Keihley 2600":
+                            self.keithley.source_mode = 'VOLT'
+                            self.keithley.compliance_current = self.compliance
+                            self.keithley.measure_current(self.nplc, 1.05e-2, True)
+                            self.keithley.source_voltage = self.bias_voltage
+                        
+                            self.keithley.config_average(self.average)
+                            self.keithley.filter_type = "REP"
+                            self.keithley.filter_count = self.average
+                            self.keithley.measure_concurent_functions = True
+                            self.keithley.enable_source()
+                            sleep(0.3)
+                        
+                            single_meas = self.keithley.current
+                            self.keithley.opc()
+                
+                            self.current_sense = np.average(single_meas)
+                        
+                            self.voltage_sense = self.bias_voltage
+                            window.set_resistance(str(round(float(self.voltage_sense)/float(self.current_sense))))
+                        else: 
+                            self.keithley.source_mode = 'VOLT'
+                            self.keithley.current_range = 0.1
+                            self.keithley.compliance_current = self.compliance
+                            self.keithley.source_voltage = self.bias_voltage
+                            self.keithley.enable_source()
+                            self.keithley.measure_current(self.nplc, 0.1)
+                            for iter in range(self.average):
+                                flag = True
+                                while flag:
+                                    try:
+                                        self.current_sense_list.append(self.keithley.current)
+                                        sleep(0.1)
+                                        flag = False
+                                    except:
+                                        sleep(0.3)
+                                        flag = True
+                        self.current_sense = np.average(self.current_sense_list)
                         self.voltage_sense = self.bias_voltage
                         window.set_resistance(str(round(float(self.voltage_sense)/float(self.current_sense))))
+
+
 
 
                     
                     else:
                         if self.sourcemeter_device == "Keithley 2600":
-                            self.keithley.ChB.source_mode = "voltage"
-                            self.keithley.ChB.auto_range_source('voltage')
-                            self.keithley.ChB.source_voltage = self.bias_voltage
-                            self.keithley.ChB.compliance_current = self.compliance 
-                            self.keithley.ChB.current_range =self.compliance
-
-                            self.keithley.ChB.measure_nplc = self.nplc
-                    
-                            self.keithley.ChB.source_output = 'ON'
-                            sleep(0.4)
-                            self.keithley.opc()
+                            self.keithley.source_mode = 'VOLT'
+                            self.keithley.current_range = 0.1
+                            self.keithley.compliance_current = self.compliance
+                            self.keithley.source_voltage = self.bias_voltage
+                            self.keithley.enable_source()
+                            self.keithley.measure_current(self.nplc, 0.1)
 
                         
                             for iter in range(self.average):
                                 flag = True
                                 while flag:
                                     try:
-                                        self.current_sense_list.append(self.keithley.ChB.read_current())
-                                        self.keithley.opc()
+                                        self.current_sense_list.append(self.keithley.current)
                                         sleep(0.1)
                                         flag = False
                                     except:
@@ -515,6 +576,8 @@ class SolarisMesurement(Procedure):
     
     def shutdown(self):
         log.info("Finished")
+        if self.sourcemeter_device == "Keithley 2600":
+            self.keithley.shutdown()
         # self.keithley.ChB.shutdown()      
     
     

@@ -32,7 +32,7 @@ log = logging.getLogger(__name__)
 log.addHandler(logging.NullHandler())
 
 
-class Keithley2600(Instrument):
+class Keithley2636(Instrument):
     """Represents the Keithley 2600 series (channel A and B) SourceMeter"""
 
     def __init__(self, adapter, name="Keithley 2600 SourceMeter", **kwargs):
@@ -41,8 +41,10 @@ class Keithley2600(Instrument):
             name,
             **kwargs
         )
-        self.ChA = Channel(self, 'a')
+        self.ChA=Channel(self, 'a')
         self.ChB = Channel(self, 'b')
+        #self.reset()
+
 
     @property
     def error(self):
@@ -68,21 +70,51 @@ class Keithley2600(Instrument):
         code, message = self.error
         while code != 0:
             t = time.time()
-            log.info("Keithley 2600 reported error: %d, %s" % (code, message))
+            log.info("Keithley 2636 reported error: %d, %s" % (code, message))
             code, message = self.error
             if (time.time() - t) > 10:
-                log.warning("Timed out for Keithley 2600 error retrieval.")
+                log.warning("Timed out for Keithley 2636 error retrieval.")
 
     def opc(self): 
         kk= self.ask("*OPC?")
         return kk
+    
+
+
 class Channel:
 
     def __init__(self, instrument, channel):
         self.instrument = instrument
         self.channel = channel
 
+
+    def check_errors(self):
+        return self.instrument.check_errors()
+    
+
+    def prepare_command(self,cmd):
+        while self.instrument.ask("*OPC?")=="1":
+            time.sleep(350/1000)
+        cmd_new=cmd.replace('{ch}',str(self.channel))
+        print("KEITHLEY 2636:",cmd_new)
+        return cmd_new
+
     def ask(self, cmd):
+        return self.instrument.ask(self.prepare_command(cmd))
+
+    def write(self, cmd):
+        #print("to ten write")
+        self.instrument.write(self.prepare_command(cmd))
+
+
+    def values(self, cmd, **kwargs):
+        """ Reads a set of values from the instrument through the adapter,
+        passing on any key-word arguments.
+        """
+        return self.instrument.values('print(%s)'%self.prepare_command(cmd))
+
+
+    '''def ask(self, cmd):
         return float(self.instrument.ask(f'print(smu{self.channel}.{cmd})'))
     
     def askall(self, cmd):
@@ -105,28 +137,29 @@ class Channel:
                                              (self.channel, cmd,), header_bytes, dtype)
 
     def check_errors(self):
-        return self.instrument.check_errors()
+        return self.instrument.check_errors()'''
 
     source_output = Instrument.control(
-        'source.output', 'source.output=%d',
+        'smu{ch}.source.output', 'smu{ch}.source.output=%d',
         """Property controlling the channel output state (ON of OFF)
         """,
         validator=strict_discrete_set,
-        values={'OFF': 0, 'ON': 1},
+        values={'OFF': 0, 'ON': 1, 'HIGH_Z':2},
         map_values=True
     )
 
+
     source_mode = Instrument.control(
-        'source.func', 'source.func=%d',
+        'smu{ch}.source.func', 'smu{ch}.source.func=%d',
         """Property controlling the channel soource function (Voltage or Current)
         """,
         validator=strict_discrete_set,
-        values={'voltage': 1, 'current': 0},
+        values={'voltage': 1, 'current': 0,'VOLT':1,'CURR':0},
         map_values=True
     )
 
     measure_nplc = Instrument.control(
-        'measure.nplc', 'measure.nplc=%f',
+        'smu{ch}.measure.nplc', 'smu{ch}.measure.nplc=%f',
         """ Property controlling the nplc value """,
     )
 
@@ -134,33 +167,33 @@ class Channel:
     # Current (A) #
     ###############
     current = Instrument.measurement(
-        'measure.i()',
+        'smu{ch}.measure.i()',
         """ Reads the current in Amps """
     )
 
     source_current = Instrument.control(
-        'source.leveli', 'source.leveli=%f',
+        'smu{ch}.source.leveli', 'smu{ch}.source.leveli=%f',
         """ Property controlling the applied source current """,
         validator=truncated_range,
         values=[-1.5, 1.5]
     )
 
     compliance_current = Instrument.control(
-        'source.limiti', 'source.limiti=%f',
+        'smu{ch}.source.limiti', 'smu{ch}.source.limiti=%f',
         """ Property controlling the source compliance current """,
         validator=truncated_range,
         values=[-1.5, 1.5]
     )
 
     source_current_range = Instrument.control(
-        'source.rangei', 'source.rangei=%f',
+        'smu{ch}.source.rangei', 'smu{ch}.source.rangei=%f',
         """Property controlling the source current range """,
         validator=truncated_range,
         values=[-1.5, 1.5]
     )
 
     current_range = Instrument.control(
-        'measure.rangei', 'measure.rangei=%f',
+        'smu{ch}.measure.rangei', 'smu{ch}.measure.rangei=%f',
         """Property controlling the measurement current range """,
         validator=truncated_range,
         values=[-1.5, 1.5]
@@ -170,7 +203,7 @@ class Channel:
     # Voltage (V) #
     ###############
     voltage = Instrument.measurement(
-        'measure.v()',
+        'smu{ch}.measure.v()',
         """ Reads the voltage in Volts """
     )
 
@@ -181,28 +214,36 @@ class Channel:
 
 
     source_voltage = Instrument.control(
-        'source.levelv', 'source.levelv=%f',
+        'smu{ch}.source.levelv', 'smu{ch}.source.levelv=%f',
         """ Property controlling the applied source voltage """,
         validator=truncated_range,
         values=[-200, 200]
     )
 
+    offset=Instrument.control(
+        'smu{ch}.source.level%s', 'smu{ch}.source.level%s=%s',
+        """ Property controlling the applied source voltage """,
+        set_process=lambda v:(v[0].replace("VOLT",'v').replace("CURR",'i'),v[1])
+        #validator=truncated_range,
+        #values=[-200, 200]
+    )
+
     compliance_voltage = Instrument.control(
-        'source.limitv', 'source.limitv=%f',
+        'smu{ch}.source.limitv', 'smu{ch}.source.limitv=%f',
         """ Property controlling the source compliance voltage """,
         validator=truncated_range,
         values=[-200, 200]
     )
 
     source_voltage_range = Instrument.control(
-        'source.rangev', 'source.rangev=%f',
+        'smu{ch}.source.rangev', 'smu{ch}.source.rangev=%f',
         """Property controlling the source current range """,
         validator=truncated_range,
         values=[-200, 200]
     )
 
     voltage_range = Instrument.control(
-        'measure.rangev', 'measure.rangev=%f',
+        'smu{ch}.measure.rangev', 'smu{ch}.measure.rangev=%f',
         """Property controlling the measurement voltage range """,
         validator=truncated_range,
         values=[-200, 200]
@@ -212,17 +253,18 @@ class Channel:
     # Resistance (Ohm) #
     ####################
     resistance = Instrument.measurement(
-        'measure.r()',
+        'smu{ch}.measure.r()',
         """ Reads the resistance in Ohms """
     )
 
     wires_mode = Instrument.control(
-        'sense', 'sense=%d',
+        'smu{ch}.sense', 'smu{ch}.sense=%d',
         """Property controlling the resistance measurement mode: 4 wires or 2 wires""",
         validator=strict_discrete_set,
         values={'4': 1, '2': 0},
         map_values=True
     )
+
 
     #######################
     # Measurement Methods #
@@ -235,10 +277,10 @@ class Channel:
         :param auto_range: Enables auto_range if True, else uses the set voltage
         """
         log.info("%s is measuring voltage." % self.channel)
-        self.write('measure.v()')
-        self.write('measure.nplc=%f' % nplc)
+        self.write('smu{ch}.measure.v()')
+        self.write('smu{ch}.measure.nplc=%f' % nplc)
         if auto_range:
-            self.write('measure.autorangev=1')
+            self.write('smu{ch}.measure.autorangev=1')
         else:
             self.voltage_range = voltage
         
@@ -250,85 +292,131 @@ class Channel:
         :param auto_range: Enables auto_range if True, else uses the set current
         """
         log.info("%s is measuring current." % self.channel)
-        self.write('measure.i()')
-        self.write('measure.nplc=%f' % nplc)
+        self.write('smu{ch}.measure.i()')
+        self.write('smu{ch}.measure.nplc=%f' % nplc)
         if auto_range:
-            self.write('measure.autorangei=1')
+            self.write('smu{ch}.measure.autorangei=1')
         else:
             self.current_range = current
        
     
-    def single_pulse_prepare(self, voltage, time, range):
+    def single_pulse_prepare(self):
         log.info("generate pulse")
-        self.write('trigger.source.listv({%f})' %voltage )
-        self.write('trigger.source.action = smub.ENABLE ')
-        self.write('trigger.measure.action = smub.DISABLE ')
-        self.write('trigger.source.limiti = 0.1')
-        self.write('source.rangev = %f' %range)
-        self.writeall('trigger.timer[1].delay = %f' %time)
-        self.writeall('trigger.timer[1].count = 1 ')
-        self.writeall('trigger.timer[1].passthrough = false ')
-        self.writeall('trigger.timer[1].stimulus = smub.trigger.ARMED_EVENT_ID ')
-        self.write('trigger.source.stimulus = 0')
-        self.write('trigger.endpulse.action = smub.SOURCE_IDLE ')
-        self.write('trigger.endpulse.stimulus = trigger.timer[1].EVENT_ID ')
-        self.write('trigger.count = 1')
-        self.write('trigger.arm.count = 1 ')
-        self.write('source.output = smub.OUTPUT_ON')
+        #self.write('trigger.source.listv({%f})' %voltage )
+        self.write('smu{ch}.trigger.source.action = smu%s.ENABLE '%self.channel)
+        self.write('smu{ch}.trigger.measure.action = smu%s.DISABLE '%self.channel)
+        self.write('smu{ch}.trigger.source.limiti = 0.0001') #!!!!!!!!! COMPILANCE !!!!!!!!!!!!!!!!!!!!!!
+        #self.write('source.rangev = %f' %range)
+        #self.writeall('trigger.timer[1].delay = %f' %time)
+        self.write('trigger.timer[1].count = 1 ')
+        self.write('trigger.timer[1].passthrough = false ')
+        self.write('trigger.timer[1].stimulus = smu%s.trigger.ARMED_EVENT_ID '%self.channel)
+        self.write('smu{ch}.trigger.source.stimulus = 0')
+        self.write('smu{ch}.trigger.endpulse.action = smu%s.SOURCE_IDLE '%self.channel)
+        self.write('smu{ch}.trigger.endpulse.stimulus = trigger.timer[1].EVENT_ID ')
+        self.write('smu{ch}.trigger.count = 1')
+        self.write('smu{ch}.trigger.arm.count = 1 ')
+        self.write('smu{ch}.source.output = smu%s.OUTPUT_ON'%self.channel)
+
+
+    amplitude = Instrument.control(
+        "", "smu{ch}.trigger.source.list%s({%s})",
+        """ Set pulse amplitude in volts""",
+        #validator=strict_discrete_set,
+        #values=[],
+        #map_values=True,
+        set_process=lambda v:(v[0].replace("VOLT",'v').replace("CURR",'i'),v[1])
+    )
+
+    compliance_current=Instrument.control(
+        "", "smu{ch}.trigger.source.limiti = %s",
+        """ Set pulse amplitude in volts""",
+    )
+
+    
+    compliance_voltage=Instrument.control(
+        "", "smu{ch}.trigger.source.limitv = %s",
+        """ Set pulse amplitude in volts""",
+    )
+    
+    source_range= Instrument.control(
+        "", "smu{ch}.source.range%s = %f",
+        """ Set pulse range in volts""",
+        #validator=strict_discrete_set,
+        #values={'CURR': 'i', 'VOLT': 'v'},
+        #map_values=True
+        set_process=lambda v:(v[0].replace("VOLT",'v').replace("CURR",'i'),v[1])
+    )
+
+    duration= Instrument.control(
+        "", "trigger.timer[1].delay = %s",
+        """ Set pulse range in volts""",
+        #validator=strict_discrete_set,
+        #values={'CURR': 'CURR', 'VOLT': 'VOLT'},
+        #map_values=True
+    )
+
+
+    def trigger(self):
+        self.single_pulse_run()
+
+    def init(self):
+        pass
+        #log.info("Using excessed function init() for Keithley2636")
         
     def single_pulse_run(self):
-        self.write('trigger.initiate()')
-        self.writeall('waitcomplete()')
-        self.write('source.output = smub.OUTPUT_OFF')
-        print()
+        self.write('smu{ch}.trigger.initiate()')
+        self.write('waitcomplete()')
+        #self.write('smu{ch}.source.output = smub.OUTPUT_OFF')
+
 
     def pulse_script_v(self, bias, level, ton, toff, points, limiti): 
-        self.write('source.limiti = %s' %limiti)
-        self.writeall('PulseVMeasureI(smub,{}, {}, {}, {}, {})'.format(bias, level, ton, toff, points)) #PulseVMeasureI(smu, bias, level, ton, toff, points) 
+        self.write('smu{ch}.source.limiti = %s' %limiti)
+        self.write('PulseVMeasureI(smub,{}, {}, {}, {}, {})'.format(bias, level, ton, toff, points)) #PulseVMeasureI(smu, bias, level, ton, toff, points) 
     
     def pulse_script_i(self): 
-        self.write('reset()')
-        self.write('source.limitv = 1')
-        self.writeall('PulseIMeasureV(smub, 0, 10e-3, 20e-3, 50e-3, 10)') #PulseIMeasureV(smu, bias, level, ton, toff, points) 
+        self.write('smu{ch}.reset()')
+        self.write('smu{ch}.source.limitv = 1')
+        self.write('PulseIMeasureV(smub, 0, 10e-3, 20e-3, 50e-3, 10)') #PulseIMeasureV(smu, bias, level, ton, toff, points) 
    
     def pulse_script_read_i(self):
-        self.askall('printbuffer(1, 2, smub.nvbuffer1.readings)')
+        self.ask('printbuffer(1, 2, smub.nvbuffer1.readings)')
     
     def pulse_script_read_v(self):
-        self.askall('printbuffer(1, 2, smub.nvbuffer1.readings)')
+        self.ask('printbuffer(1, 2, smub.nvbuffer1.readings)')
 
     def config_pulse_v(self):
-        self.write('reset()')
-        self.writeall('ConfigPulseVMeasureI(smub, 0, 0.1, 1, 0.800, 0.800, 10, smub.nvbuffer1, 2)') #ConfigPulseVMeasureI(smu, bias, level, limit, ton, toff, points, buffer,tag) 
+        self.write('smu{ch}.reset()')
+        self.write('ConfigPulseVMeasureI(smub, 0, 0.1, 1, 0.800, 0.800, 10, smub.nvbuffer1, 2)') #ConfigPulseVMeasureI(smu, bias, level, limit, ton, toff, points, buffer,tag) 
 
 
     def config_pulse_i(self):
-        self.writeall('rbi = smua.makebuffer(10)')
-        self.writeall('rbv = smua.makebuffer(10)')
-        self.writeall('rbi.appendmode = 1')
-        self.writeall('rbv.appendmode = 1')
-        self.writeall('rbs = { i = rbi, v = rbv }')
-        self.writeall('ConfigPulseIMeasureV(smua, 0, 5, 10, 0.001, 0.080, 1, smub.nvbuffer1, 1)' ) # f, msg = ConfigPulseIMeasureV(smu, bias, level, limit, ton, toff, points, buffer (if nil no measurements),ag) 
+        self.write('rbi = smua.makebuffer(10)')
+        self.write('rbv = smua.makebuffer(10)')
+        self.write('rbi.appendmode = 1')
+        self.write('rbv.appendmode = 1')
+        self.write('rbs = { i = rbi, v = rbv }')
+        self.write('ConfigPulseIMeasureV(smua, 0, 5, 10, 0.001, 0.080, 1, smub.nvbuffer1, 1)' ) # f, msg = ConfigPulseIMeasureV(smu, bias, level, limit, ton, toff, points, buffer (if nil no measurements),ag) 
 
 
     def start_pulse(self):
         
-        self.askall('InitiatePulseTest(1)')
+        self.ask('InitiatePulseTest(1)')
     
     def reset_buffer(self):
-        self.writeall('smub.nvbuffer1.clear()')
-        self.writeall('smub.nvbuffer1.appendmode = 1')
+        self.write('smub.nvbuffer1.clear()')
+        self.write('smub.nvbuffer1.appendmode = 1')
 
     def reset_smu(self):
-        self.writeall('smub.reset()')
+        self.write('smub.reset()')
 
     def auto_range_source(self, source_mode):
         """ Configures the source to use an automatic range.
         """
         if source_mode == 'current':
-            self.write('source.autorangei=1')
+            self.write('smu{ch}.source.autorangei=1')
         else:
-            self.write('source.autorangev=1')
+            self.write('smu{ch}.source.autorangev=1')
 
     def apply_current(self, current_range=None, compliance_voltage=0.1):
         """ Configures the instrument to apply a source current, and
@@ -397,14 +485,48 @@ class Channel:
         #     self.ramp_to_voltage(0.0)
         self.source_output = 'OFF'
 
-    def read_current(self): 
-        return self.ask('measure.i()')
+    #def read_current(self): 
+    #    return self.ask('measure.i()')
+    
+    def enable_source(self):
+        self.source_output="ON"
 
-# from time import sleep
-# k = Keithley2600('GPIB0::26::INSTR', timeout=50000)
+    def disable_source(self):
+        self.source_output="HIGH_Z"
+
+    
+
+if __name__ == "__main__":
+#from time import sleep
+    k = Keithley2636('GPIB0::26::INSTR', timeout=50000)
+    ch=k.ChA
+    ch.amplitude=("VOLT",2)
+    ch.single_pulse_prepare()
+    
+    
+    ch.duration=1e-3
+    ch.source_range=("VOLT",5)
+    
+    while True:
+        ch.trigger()
+        time.sleep(1)
+    #time.sleep(1)
+    #ch.disable_source()
+    #ch.trigger()
+
+    #k.ChB.enable_source()
+    #time.sleep(5)
+    #k.ChB.shutdown()
+   #k.reset()
+    #k.ChA.source_output="ON"
+    #k.ChA.single_pulse_prepare(4,1e-6,5)
+    #k.ChA.single_pulse_run()
+    #k.ChA.measure_current()
+    #k.ChA.shutdown()
+
 # #print(k.opc())
 # # k.reset()
-# k.ChB.pulse_script_v(0, 0.1, 2,2, 2, 0.001)
+#k.ChB.pulse_script_v(0, 0.1, 2,2, 2, 0.001)
 # flag = True
 # pp = k.opc()
 # # while flag:

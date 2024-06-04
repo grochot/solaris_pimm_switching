@@ -9,14 +9,48 @@ import numpy as np
 import time
 import pyvisa
 
+def clist_validator(value, values):
 
+    # Convert value to list of strings
+        if isinstance(value, str):
+            clist = [value.strip(" @(),")]
+        elif isinstance(value, (int, float)):
+            clist = [f"{value:d}"]
+        elif isinstance(value, (list, tuple, np.ndarray, range)):
+            clist = [f"{x:d}" for x in value]
+        else:
+            raise ValueError(f"Type of value ({type(value)}) not valid")
+
+        # Pad numbers to length (if required)
+        clist = [c.rjust(2, "0") for c in clist]
+        clist = [c.rjust(3, "1") for c in clist]
+
+        # Check channels against valid channels
+        for c in clist:
+            if int(c) not in values:
+                raise ValueError(
+                    f"Channel number {value:g} not valid."
+                )
+
+        # Convert list of strings to clist format
+        clist = "(@{:s})".format(", ".join(clist))
+
+        return clist
 
 
 
 class Keithley2700:
+     
+    CLIST_VALUES = list(range(101, 300))
+
     def __init__(self, adapter):
         rm= pyvisa.ResourceManager()
         self.instrument = rm.open_resource(adapter)
+    
+    def closed_channels_get(self):
+        self.closed =  self.instrument.query("ROUTe:MULTiple:CLOSe?")
+        return self.closed.strip(" ()@,\n").split(",")
+
         
     def set_home_reading_screen(self):
         self.instrument.write("DISP:CLE")
@@ -92,26 +126,41 @@ class Keithley2700:
         return self.number
 
 
+    
+
+    def get_state_of_channels(self, channels):
+        """ Get the open or closed state of the specified channels
+
+        :param channels: a list of channel numbers, or single channel number
+        """
+        clist = clist_validator(channels, self.CLIST_VALUES)
+        state = self.instrument.query("ROUTe:MULTiple:STATe? %s" % clist)
+
+        return state
+
+    
+
 ##### TEST #######
 
-#k = Keithley2700("GPIB0::18::INSTR")
-# k.open_all_channels()
-# # from time import sleep
+# k = Keithley2700("GPIB0::18::INSTR")
+
+# # # from time import sleep
 # k.closed_channels("125")
 # k.closed_channels("138")
-# k.closed_channels("103")
-# # k.closed_channels("111")
-# # k.closed_channels("116")
-# k.closed_channels("108")
-# k.closed_channels("150")
-# # k.closed_channels("149")
-# # k.closed_channels("127")
-# # k.closed_channels("140")
-# # k.set_averaging(10)
-# k.set_resistance()
-# k.set_averaging(3)
-# time.sleep(2)
-# print(k.read())
+# # k.closed_channels("103")
+# # # k.closed_channels("111")
+# # # k.closed_channels("116")
+# # k.closed_channels("108")
+# # k.closed_channels("150")
+# # # k.closed_channels("149")
+# # # k.closed_channels("127")
+# # # k.closed_channels("140")
+# # # k.set_averaging(10)
+# # k.set_resistance()
+# # k.set_averaging(3)
+# # time.sleep(2)
+# # print(k.read())
+# print(k.closed_channels_get())
 
 #print(k.close_rows_to_columns(5,6))
 
