@@ -60,7 +60,7 @@ class SolarisMesurement(Procedure):
     mode_source = ListParameter("Mode source", choices=["A->B", "A->C", "A->D", "B->C", "B->D", "C->D", "A,C->B,D", "C,B,->A,D"], default = parameters_from_file["mode_source"])
     mode_multimeter = ListParameter("Mode multimeter", choices=["A->C", "B->D", "A->B", "C->D", "C->B", "A->D"], default = parameters_from_file["mode_multimeter"])
     resistance_value = Parameter("Resistance Value")
-    DATA_COLUMNS = ['index', 'Pulse Voltage (V)', 'Current (A)', 'Sense voltage (V)', 'Resistance (ohm)']
+    DATA_COLUMNS = ['index', 'Pulse Voltage (V)', 'Current (A)', 'Sense voltage (V)', 'Resistance (ohm)', 'Pulse Current (A)']
 
     def startup(self):
         log.setLevel(0)
@@ -220,7 +220,8 @@ class SolarisMesurement(Procedure):
                         self.keithley.source_voltage = i
                         sleep(0.3)
                         for pulse_numbers in range(self.number_of_pulses):
-                            log.info("Pulse resistance: {} Ohms".format(i/self.keithley.pulse(self.pulse_time, self.pulse_delay)))
+                            self.pulse_current = self.keithley.pulse(self.pulse_time, self.pulse_delay)
+                            log.info("Pulse resistance: {} Ohms".format(i/self.pulse_current))
                             
                     
 
@@ -387,7 +388,8 @@ class SolarisMesurement(Procedure):
                         'Pulse Voltage (V)': float(i),
                         'Current (A)': float(self.current_sense),
                         'Sense voltage (V)': float(self.voltage_sense),
-                        'Resistance (ohm)': float(self.voltage_sense)/float(self.current_sense)
+                        'Resistance (ohm)': float(self.voltage_sense)/float(self.current_sense),
+                        'Pulse Current (A)' : float(self.pulse_current)
                         }
                     self.emit('results', data)
                     log.info("Step {} of {}".format(licznik, len(self.vector)))
@@ -595,7 +597,7 @@ class MainWindow(ManagedWindowBase):
     def __init__(self):
         widget_list = (
                         LogWidget("Experiment Log"),
-                        PlotWidget("Graph",['index','Pulse Voltage (V)', 'Current (A)', 'Sense voltage (V)', 'Resistance (ohm)'] )
+                        PlotWidget("Graph",['index','Pulse Voltage (V)', 'Current (A)', 'Sense voltage (V)', 'Resistance (ohm)', 'Pulse Current (A)'] )
                         
                         )
        
