@@ -221,6 +221,7 @@ class SolarisMesurement(Procedure):
                         sleep(0.3)
                         for pulse_numbers in range(self.number_of_pulses):
                             self.pulse_current = self.keithley.pulse(self.pulse_time, self.pulse_delay)
+                            print(self.pulse_current)
                             log.info("Pulse resistance: {} Ohms".format(i/self.pulse_current))
                             
                     
@@ -500,12 +501,13 @@ class SolarisMesurement(Procedure):
                                         self.current_sense_list.append(self.keithley.current)
                                         sleep(0.1)
                                         flag = False
-                                    except:
+                                    except Exception as e:
                                         sleep(0.3)
                                         flag = True
-                        self.current_sense = np.average(self.current_sense_list)
-                        self.voltage_sense = self.bias_voltage
-                        window.set_resistance(str(round(float(self.voltage_sense)/float(self.current_sense))))
+                                       
+                            self.current_sense = np.average(self.current_sense_list)
+                            self.voltage_sense = self.bias_voltage
+                            window.set_resistance(str(round(float(self.voltage_sense)/float(self.current_sense))))
 
 
 
