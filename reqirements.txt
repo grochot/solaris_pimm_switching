@@ -1,8 +1,7 @@
 matplotlib
-numpy
+numpy=1.24.6
 pandas
 PicoSDK
-PyMeasure
 PyQt5
 pyserial
 PyVISA
