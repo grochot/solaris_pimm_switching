@@ -1,5 +1,5 @@
 matplotlib
-numpy=1.24.6
+numpy==1.26.4
 pandas
 PicoSDK
 PyQt5
@@ -12,3 +12,4 @@ zhinst
 keithley2600
 nidaqmx
 gpib-ctypes
+pint

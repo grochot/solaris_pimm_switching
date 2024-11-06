@@ -1,5 +1,6 @@
 @echo off
 cd /d "%~dp0"
-python -m pip3 install -r requirements.txt
-python -m pip3 uninstall pymeasure
+python -m pip install -r reqirements.txt
+python -m pip uninstall pymeasure
 python main.py
+pause
