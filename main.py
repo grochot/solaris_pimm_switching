@@ -76,7 +76,7 @@ class SolarisMesurement(Procedure):
             #Prepare keithley 
             if self.sourcemeter_device == "Keithley 2600":
                 try:
-                    self.keithley = Keithley2636(self.keithley_address, timeout= 50000).ChB
+                    self.keithley = Keithley2636(self.keithley_address, timeout= 50000).ChA
                     self.keithley.single_pulse_prepare()
                     self.keithley.source_mode = 'VOLT'
                     self.keithley.current_range = 0.1
@@ -86,7 +86,7 @@ class SolarisMesurement(Procedure):
                     self.keithley.measure_current(self.nplc, 0.1)
 
                 except Exception as e:
-                    self.keithley = Keithley2600Dummy()
+                    self.keithley = Keithley2600Dummy(self.keithley_address).ChA
                     log.warning("Could not connect to the sourcemeter. Use dummy.")
             else: 
                 try:
@@ -129,7 +129,7 @@ class SolarisMesurement(Procedure):
                 #Prepare keithley 
             if self.sourcemeter_device == "Keithley 2600":
                 try:
-                    self.keithley = Keithley2636(self.keithley_address, timeout= 50000).ChB
+                    self.keithley = Keithley2636(self.keithley_address, timeout= 50000).ChA
                     self.keithley.source_mode = 'VOLT'
                     self.keithley.current_range = 0.1
                     self.keithley.compliance_current = self.compliance
@@ -213,7 +213,8 @@ class SolarisMesurement(Procedure):
                         self.keithley.amplitude=("VOLT",i)
                         self.keithley.enable_source()
                         self.keithley.init()
-                        self.keithley.trigger()
+                        for pulse_numbers in range(self.number_of_pulses):
+                            self.keithley.trigger()
                     else: 
                         self.keithley.source_mode = 'VOLT'
                         self.keithley.compliance_current = self.compliance
@@ -390,7 +391,7 @@ class SolarisMesurement(Procedure):
                         'Current (A)': float(self.current_sense),
                         'Sense voltage (V)': float(self.voltage_sense),
                         'Resistance (ohm)': float(self.voltage_sense)/float(self.current_sense),
-                        'Pulse Current (A)' : float(self.pulse_current)
+                        'Pulse Current (A)' : float(self.pulse_current) if self.sourcemeter_device == "Keithley 2400" else np. nan
                         }
                     self.emit('results', data)
                     log.info("Step {} of {}".format(licznik, len(self.vector)))
@@ -571,7 +572,7 @@ class SolarisMesurement(Procedure):
                         log.warning("Caught the stop flag in the procedure")
                         break
                 if self.sourcemeter_device == "Keithley 2600":
-                        self.keithley.ChB.shutdown()
+                        self.keithley.ChA.shutdown()
                 else:
                         self.keithley.shutdown()
                         self.keithley.reset()
@@ -582,7 +583,7 @@ class SolarisMesurement(Procedure):
         log.info("Finished")
         if self.sourcemeter_device == "Keithley 2600":
             self.keithley.shutdown()
-        # self.keithley.ChB.shutdown()      
+        # self.keithley.ChA.shutdown()      
     
     
     def close_on(self):

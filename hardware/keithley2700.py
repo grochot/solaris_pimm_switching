@@ -45,7 +45,7 @@ class Keithley2700:
 
     def __init__(self, adapter):
         rm= pyvisa.ResourceManager()
-        self.instrument = rm.open_resource(adapter)
+        self.instrument = rm.open_resource("TCPIP::{}::INSTR".format(adapter))
     
     def closed_channels_get(self):
         self.closed =  self.instrument.query("ROUTe:MULTiple:CLOSe?")

@@ -37,7 +37,7 @@ class Keithley2636(Instrument):
 
     def __init__(self, adapter, name="Keithley 2600 SourceMeter", **kwargs):
         super().__init__(
-            adapter,
+           "TCPIP::{}::INSTR".format(adapter),
             name,
             **kwargs
         )

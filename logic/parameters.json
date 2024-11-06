@@ -1,9 +1,9 @@
 {
-    "mode": "Multimeter Mode",
+    "mode": "Sourcemeter pulse mode",
     "sample": "7500test",
-    "keithley_address": "GPIB0::24::INSTR",
-    "multimeter_address": "GPIB0::18::INSTR",
-    "sourcemeter_device": "Keithley 2400",
+    "keithley_address": "169.254.0.1",
+    "multimeter_address": "169.254.71.198",
+    "sourcemeter_device": "Keithley 2600",
     "pulse_time": 0.1,
     "pulse_delay": 0.2,
     "number_of_pulses": 5,

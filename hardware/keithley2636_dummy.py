@@ -32,12 +32,14 @@ log = logging.getLogger(__name__)
 log.addHandler(logging.NullHandler())
 
 
-class Keithley2600Dummy(Instrument):
+class Keithley2600Dummy():
     """Represents the Keithley 2600 series (channel A and B) SourceMeter"""
-
-    def __init__(self):
-        self.ChA = Channel(self, 'a')
+    
+    def __init__(self, adapter, name="Keithley 2600 SourceMeter", **kwargs):
+        
+        self.ChA=Channel(self, 'a')
         self.ChB = Channel(self, 'b')
+        #self.reset()
 
     @property
     def error(self):
@@ -80,6 +82,15 @@ class Channel:
 
     def check_errors(self):
         return np.random.rand(1)
+    
+    def init(self):
+        pass
+
+    def trigger(self):
+        pass
+
+    def disable_source(self):
+        pass
 
     source_output = 2
 
@@ -177,3 +188,6 @@ class Channel:
 
     def shutdown(self):
        pass
+
+    def enable_source(self):
+        pass
