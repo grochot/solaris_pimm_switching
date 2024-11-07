@@ -137,6 +137,10 @@ class Keithley2700:
         state = self.instrument.query("ROUTe:MULTiple:STATe? %s" % clist)
 
         return state
+    
+    def close_connection(self):
+        self.instrument.close()
+        print("Switch Connection closed")
 
     
 

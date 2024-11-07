@@ -106,6 +106,10 @@ class Channel:
         #print("to ten write")
         self.instrument.write(self.prepare_command(cmd))
 
+    def close_connection(self):
+        self.instrument.close()
+        print("Keithley Connection closed")
+
 
     def values(self, cmd, **kwargs):
         """ Reads a set of values from the instrument through the adapter,
@@ -372,22 +376,22 @@ class Channel:
 
     def pulse_script_v(self, bias, level, ton, toff, points, limiti): 
         self.write('smu{ch}.source.limiti = %s' %limiti)
-        self.write('PulseVMeasureI(smub,{}, {}, {}, {}, {})'.format(bias, level, ton, toff, points)) #PulseVMeasureI(smu, bias, level, ton, toff, points) 
+        self.write('PulseVMeasureI(smua,{}, {}, {}, {}, {})'.format(bias, level, ton, toff, points)) #PulseVMeasureI(smu, bias, level, ton, toff, points) 
     
     def pulse_script_i(self): 
         self.write('smu{ch}.reset()')
         self.write('smu{ch}.source.limitv = 1')
-        self.write('PulseIMeasureV(smub, 0, 10e-3, 20e-3, 50e-3, 10)') #PulseIMeasureV(smu, bias, level, ton, toff, points) 
+        self.write('PulseIMeasureV(smua, 0, 10e-3, 20e-3, 50e-3, 10)') #PulseIMeasureV(smu, bias, level, ton, toff, points) 
    
     def pulse_script_read_i(self):
-        self.ask('printbuffer(1, 2, smub.nvbuffer1.readings)')
+        self.ask('printbuffer(1, 2, smua.nvbuffer1.readings)')
     
     def pulse_script_read_v(self):
-        self.ask('printbuffer(1, 2, smub.nvbuffer1.readings)')
+        self.ask('printbuffer(1, 2, smua.nvbuffer1.readings)')
 
     def config_pulse_v(self):
         self.write('smu{ch}.reset()')
-        self.write('ConfigPulseVMeasureI(smub, 0, 0.1, 1, 0.800, 0.800, 10, smub.nvbuffer1, 2)') #ConfigPulseVMeasureI(smu, bias, level, limit, ton, toff, points, buffer,tag) 
+        self.write('ConfigPulseVMeasureI(smua, 0, 0.1, 1, 0.800, 0.800, 10, smua.nvbuffer1, 2)') #ConfigPulseVMeasureI(smu, bias, level, limit, ton, toff, points, buffer,tag) 
 
 
     def config_pulse_i(self):
@@ -396,7 +400,7 @@ class Channel:
         self.write('rbi.appendmode = 1')
         self.write('rbv.appendmode = 1')
         self.write('rbs = { i = rbi, v = rbv }')
-        self.write('ConfigPulseIMeasureV(smua, 0, 5, 10, 0.001, 0.080, 1, smub.nvbuffer1, 1)' ) # f, msg = ConfigPulseIMeasureV(smu, bias, level, limit, ton, toff, points, buffer (if nil no measurements),ag) 
+        self.write('ConfigPulseIMeasureV(smua, 0, 5, 10, 0.001, 0.080, 1, smua.nvbuffer1, 1)' ) # f, msg = ConfigPulseIMeasureV(smu, bias, level, limit, ton, toff, points, buffer (if nil no measurements),ag) 
 
 
     def start_pulse(self):
@@ -404,11 +408,11 @@ class Channel:
         self.ask('InitiatePulseTest(1)')
     
     def reset_buffer(self):
-        self.write('smub.nvbuffer1.clear()')
-        self.write('smub.nvbuffer1.appendmode = 1')
+        self.write('smua.nvbuffer1.clear()')
+        self.write('smua.nvbuffer1.appendmode = 1')
 
     def reset_smu(self):
-        self.write('smub.reset()')
+        self.write('smua.reset()')
 
     def auto_range_source(self, source_mode):
         """ Configures the source to use an automatic range.
@@ -493,6 +497,8 @@ class Channel:
 
     def disable_source(self):
         self.source_output="HIGH_Z"
+
+
 
     
 
