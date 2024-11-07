@@ -191,3 +191,6 @@ class Channel:
 
     def enable_source(self):
         pass
+
+    def close_connection(self):
+        pass
