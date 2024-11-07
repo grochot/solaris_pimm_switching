@@ -289,7 +289,7 @@ class Channel:
             self.voltage_range = voltage
         
 
-    def measure_current(self, nplc=1, current=1.5, auto_range=True):
+    def measure_current(self, nplc=0.1, current=0.1, auto_range=True):
         """ Configures the measurement of current.
         :param nplc: Number of power line cycles (NPLC) from 0.001 to 25
         :param current: Upper limit of current in Amps, from -1.5 A to 1.5 A
@@ -439,7 +439,7 @@ class Channel:
         self.compliance_voltage = compliance_voltage
         #self.check_errors()
 
-    def apply_voltage(self, voltage_range=None,
+    def apply_voltage(self, voltage_range=10,
                       compliance_current=0.1):
         """ Configures the instrument to apply a source voltage, and
         uses an auto range unless a voltage range is specified.
@@ -503,10 +503,11 @@ class Channel:
     
 
 if __name__ == "__main__":
+   
 #from time import sleep
-    k = Keithley2636('GPIB0::26::INSTR', timeout=50000)
+    k = Keithley2636('169.254.0.1', timeout=50000)
     ch=k.ChA
-    ch.amplitude=("VOLT",2)
+    ch.amplitude=("VOLT",0.1)
     ch.single_pulse_prepare()
     
     
@@ -551,7 +552,7 @@ if __name__ == "__main__":
 #     print(k.opc)
 # print(k.ChB.read_current() ) 
 # time.sleep(0.3)
-# k.reset()
+# k.reset() self.tmp_current = 
 # time.sleep(0.3)
 # k.ChB.measure_current(1, 3,1)
 # k.ChB.source_mode = "voltage"
