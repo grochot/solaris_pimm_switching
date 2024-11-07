@@ -274,7 +274,7 @@ class Channel:
     # Measurement Methods #
     #######################
 
-    def measure_voltage(self, nplc=1, voltage=21.0, auto_range=True):
+    def measure_voltage(self, nplc=1, voltage=21.0, auto_range=False):
         """ Configures the measurement of voltage.
         :param nplc: Number of power line cycles (NPLC) from 0.001 to 25
         :param voltage: Upper limit of voltage in Volts, from -200 V to 200 V
@@ -289,7 +289,7 @@ class Channel:
             self.voltage_range = voltage
         
 
-    def measure_current(self, nplc=0.1, current=0.1, auto_range=True):
+    def measure_current(self, nplc=0.1, current=0.01, auto_range=False):
         """ Configures the measurement of current.
         :param nplc: Number of power line cycles (NPLC) from 0.001 to 25
         :param current: Upper limit of current in Amps, from -1.5 A to 1.5 A
@@ -440,7 +440,7 @@ class Channel:
         #self.check_errors()
 
     def apply_voltage(self, voltage_range=10,
-                      compliance_current=0.1):
+                      compliance_current=0.01):
         """ Configures the instrument to apply a source voltage, and
         uses an auto range unless a voltage range is specified.
         The compliance current is also set.

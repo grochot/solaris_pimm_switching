@@ -82,7 +82,7 @@ class SolarisMesurement(Procedure):
                 self.keithley.source_mode = 'VOLT'
                 self.keithley.current_range = 0.1
                 self.keithley.compliance_current = self.compliance
-                self.keithley.source_voltage_range = 100
+                self.keithley.source_voltage_range = 30
                 self.keithley.source_voltage = self.bias_voltage
                 self.keithley.enable_source()
                 self.keithley.measure_current(self.nplc, 0.1)
@@ -172,7 +172,7 @@ class SolarisMesurement(Procedure):
                     if self.sourcemeter_device != "Keithley 2600":
                         self.keithley.source_mode = 'VOLT'
                         self.keithley.compliance_current = self.compliance
-                        self.keithley.measure_current(self.nplc, 1.05e-1, True)
+                        self.keithley.measure_current(self.nplc, 1.05e-2, False)
                         self.keithley.beeper(0)
                   
                         
@@ -234,8 +234,7 @@ class SolarisMesurement(Procedure):
 
                     log.info("End of pulses")
                     if self.sourcemeter_device == "Keithley 2600": 
-                        self.keithley.disable_source()
-                        self.keithley.enable_source()
+                        self.keithley.shutdown()
                     sleep(0.5)
 
 
@@ -344,6 +343,7 @@ class SolarisMesurement(Procedure):
                     log.info("Measure resistance")
                     self.current_sense_list = []
                     if self.sourcemeter_device == "Keithley 2600":
+                        self.keithley.enable_source()
                         self.keithley.measure_current()
                         sleep(0.3)
                         self.keithley.apply_voltage()
@@ -368,7 +368,7 @@ class SolarisMesurement(Procedure):
                     else:  
                         # self.keithley.source_mode = 'VOLT'
                         self.keithley.compliance_current = self.compliance
-                        self.keithley.measure_current(self.nplc, 1.05e-1, True)
+                        self.keithley.measure_current(self.nplc, 1.05e-2, True)
                         self.keithley.source_voltage = self.bias_voltage
                         sleep(0.3)
                         self.keithley.config_average(self.average)
@@ -389,7 +389,7 @@ class SolarisMesurement(Procedure):
                     
                     
                     if self.sourcemeter_device == "Keithley 2600":
-                        self.keithley.disable_source()
+                        self.keithley.shutdown()
                         # self.keithley.reset_smu()
                     else:
                         self.keithley.shutdown()
@@ -608,12 +608,10 @@ class SolarisMesurement(Procedure):
     
     
     def close_on(self):
-        multimeter = Keithley2700(self.multimeter_address)
-        multimeter.close_to_mass()
+        self.multimeter.close_to_mass()
 
     def close_off(self):
-        multimeter = Keithley2700(self.multimeter_address)
-        multimeter.open_all_channels()
+        self.multimeter.open_all_channels()
             
 
 class MainWindow(ManagedWindowBase):

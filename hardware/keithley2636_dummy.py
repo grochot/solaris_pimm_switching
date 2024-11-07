@@ -135,10 +135,10 @@ class Channel:
     # Measurement Methods #
     #######################
 
-    def measure_voltage(self, nplc=1, voltage=21.0, auto_range=True):
+    def measure_voltage(self, nplc=0.1, voltage=21.0, auto_range=False):
         pass
 
-    def measure_current(self, nplc=1, current=1.05e-4, auto_range=True):
+    def measure_current(self, nplc=0.1, current=1.05e-3, auto_range=False):
         pass
     
     def single_pulse_prepare(self, voltage, time, range):
