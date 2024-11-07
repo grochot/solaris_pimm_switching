@@ -141,7 +141,10 @@ class Instrument(CommonBase):
         :param command: command string to be sent to the instrument
         :param kwargs: Keyword arguments for the adapter.
         """
-        self.adapter.write(command, **kwargs)
+        self.adapter.write(command, **kwargs) 
+    
+    def close(self): 
+        self.adapter.close()
 
     def write_bytes(self, content, **kwargs):
         """Write the bytes `content` to the instrument."""
