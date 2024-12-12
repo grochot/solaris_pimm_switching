@@ -61,4 +61,6 @@ class Keithley2700Dummy:
     def close_rows_to_columns(self,row, column):
         self.number = str(100 + (row-1)*8 + column)
         return self.number
+    def closed_channels_get(self):
+        return "Dummy channels"
     #

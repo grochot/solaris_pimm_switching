@@ -1,8 +1,7 @@
 matplotlib
-numpy
+numpy==1.26.4
 pandas
 PicoSDK
-PyMeasure
 PyQt5
 pyserial
 PyVISA
@@ -13,3 +12,4 @@ zhinst
 keithley2600
 nidaqmx
 gpib-ctypes
+pint

@@ -17,7 +17,11 @@ class Keithley2700:
     def __init__(self, adapter):
         rm= pyvisa.ResourceManager()
         self.instrument = rm.open_resource(adapter)
-        
+    
+    def closed_channels_get(self):
+        self.closed =  self.instrument.query("ROUTe:MULTiple:CLOSe?")
+        return self.closed.strip(" ()@,\n").split(",")    
+    
     def set_home_reading_screen(self):
         self.instrument.write("DISP:CLE")
         self.instrument.write("DISP:SCR:HOME_LARG")
